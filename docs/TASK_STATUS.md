@@ -213,3 +213,56 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 
 - PHY-018/019: Test-Current.ps1 -Run p19r2, exit 0; Debug/Release CTest 47/47. Pocket contact passed finite jaw/rim/slope/bottom sweeps, high speed, finite misses, overlap and verified rebound. Pocket state then passed AtMouth/InPocket/Potted/Ejected transitions, once-only event edge, wrong-pocket/invalid/potted recovery rejection. PHY-018 remains REVIEW because complete integration into the physics service and replay/state schema is not done; PHY-019 DONE is the standalone state machine only. Initial p18 timing expectation and p19 state edge failures are retained in the failure ledger; each fixed on first retry.
 
+
+## 无 UE5 执行计划（2026-11-12）
+
+背景：公司内网暂时无法安装 UE5。本节规划不安装 UE5 时可以完整完成的 36 项任务。完成后目标完成数为 65/121。原有英文记录保留不动。
+
+### 第 0 步：版本基线
+
+- 本仓库局部提交身份：nh511 / 219069329+nh511@users.noreply.github.com（未改全局配置）。
+- 初始提交 3ee68cb（187 个文件），已推送到 https://github.com/nh511/Snooke.git 的 main 分支。build/ 和 build-evidence/ 不上传。
+- FND-004 证据：推送后 GitHub 连接超时（github.com:443 TCP 不通），改为从同一提交 3ee68cb 本地克隆到 build-evidence/fnd004-clone/repo，运行 Verify-Standalone.ps1 -Run fnd004，exit 0，Debug/Release CTest 47/47。FND-004 仍为 REVIEW：UE 项目文件生成和插件还原尚未验证，远程克隆需要网络恢复后补测。
+
+### 执行顺序
+
+阶段 1 物理闭环：PHY-018（收尾）→ PHY-020 → PHY-021
+
+阶段 2 回放和验证：REP-001 → VAL-003 → VAL-004 → VAL-009 → REP-002 → VAL-005 → VAL-006 → VAL-007 → VAL-008 → COR-006 → REP-003
+
+阶段 3 规则：RUL-002 → RUL-005 → RUL-006 → RUL-007 → RUL-008 → RUL-009 → RUL-010 → RUL-011 → RUL-012 → REP-004 → RUL-015 → RUL-013 → RUL-014 → REP-005
+
+阶段 4 稳定性：REL-004 → REL-002 → REL-006
+
+阶段 5 AI：AIC-001 → AIC-002 → AIC-003 → AIC-004 → AIC-005
+
+### 本轮不做
+
+- 只能部分完成（以后做，届时最多到 REVIEW）：FND-008、VAL-001、VAL-002、REL-001、VAL-010。
+- 依赖 UE5：FND-002、FND-003、COR-007 至 COR-010、REL-003、REL-005，以及 INT、CHA、PRE 全部 33 项。
+- 已 REVIEW、只差 UE 部分：FND-004、FND-006、FND-007、COR-004、DAT-001 至 DAT-006。
+
+### 关键设计约定
+
+- 物理参数包 snooker-physics-bundle-v1：内嵌球桌、库边、袋口、球碰球、布面、球杆、重力、步长、几何设置和服务限值；参数包版本即快照 PhysicsParameterVersion。
+- 六袋工程样例桌 data/table-six-pocket.snooker：4 角袋 + 2 中袋，闭合边界；工程样例，不是实测校准。
+- 快照 v3：每球增加落袋状态；v2 快照读入时所有球视为在台面上。
+- 整杆模拟：固定步内按时间顺序处理球碰球、碰墙、越过袋口线和袋内接触；同时事件（时间差 ≤1e-12 s）按固定顺序处理；只有碰到袋底才发 Potted，且只发一次。
+- 故障码：NonFinite、Penetration、VelocityExplosion、Timeout、EventLoop、LeftTable、PocketEscape、SolverError；故障中断模拟并写出可重放故障文件。
+- 规则：比赛状态 v2；规则参数 snooker-rules-v1（match/practice）；最低罚分 4。
+
+### Miss 判罚策略（用户选定：有直线可击才判）
+
+比赛模式下同时满足以下三条才判 Miss：犯规原因是没有先碰到目标球；击球前至少有一个目标球两侧都能直线击到；击球方不需要对方做斯诺克就能追分。练习模式不判 Miss。判 Miss 后对方可选择从当前位置打，或让犯规方恢复到击球前快照重打。不实现三次 Miss 判负。
+
+### 执行和提交规则
+
+- 每个任务：标记 IN_PROGRESS → 实现和测试 → Test-Current.ps1 -Run <任务号>-a<次数> 的 Debug/Release CTest 全部通过 → 更新状态和中文证据 → 本地提交 "<任务号>: <中文摘要>"。
+- 每个阶段结束：Verify-Standalone.ps1 -Run stage<N> 干净副本验证，然后 git push origin main。
+- 失败处理：找到根本原因再修；不靠放宽容差或修改期望值过测，除非有解析依据并写入失败台账。同一任务第一次失败后最多重试 3 次，仍失败则标记 BLOCKED、提交并推送已完成部分、停止并报告。推送失败按同样规则计数。
+- 禁止：强制推送、修改全局 Git 配置、提交 build/ 或 build-evidence/。
+- 所有参数都是工程值，基线是回归基线，不是实测结果。Debug 与 Release 结果差超过 1e-9 视为缺陷。
+
+### 本计划执行记录
+
+（按任务追加）
