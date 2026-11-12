@@ -1,0 +1,1 @@
+snooker-ball-contact-v1 ball-contact-engineering-v1 0.95 0.05 0.0000001

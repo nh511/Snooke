@@ -1,0 +1,5 @@
+# Pocket State (PHY-019)
+
+PocketStateData is the physics-side state only: OnCloth, AtMouth, InPocket, Potted or Ejected, current pocket ID and pot-event-emitted flag. UpdatePocketState consumes a verified pocket contact plus explicit inside/returned-to-cloth observations; it does not infer scoring from position inside an opening. Jaw/rim/slope contact can move a ball to AtMouth but cannot emit a pot. Bottom contact is the only event source for EnteredPocket, and the flag makes it once-only after snapshot/state repetition.
+
+Potted cannot silently eject. Ejected is an explicit recovery result for a non-potted ball returning to cloth, clears pocket ID and event flag, and requires the caller to have applied the actual rebound/trajectory. A pocket ID cannot change during descent. Invalid previous states, zero IDs and inconsistent transitions leave Output untouched. This is not the match rules scorer, respot precedence, replay schema integration, audio event or a continuous physics stepper. Full potted-state serialization must be added to the next snapshot/replay schema before a pocket-enabled shot is replayable.

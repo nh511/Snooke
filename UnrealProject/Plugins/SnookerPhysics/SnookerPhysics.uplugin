@@ -1,0 +1,13 @@
+{
+  "FileVersion": 3,
+  "Version": 1,
+  "VersionName": "0.1.0",
+  "FriendlyName": "Snooker Physics",
+  "Description": "Standalone core and UE adapter boundary; not yet compiled or integrated",
+  "Category": "Physics",
+  "CanContainContent": false,
+  "Modules": [
+    { "Name": "SnookerPhysicsCore", "Type": "Runtime", "LoadingPhase": "Default" },
+    { "Name": "SnookerPhysicsUE", "Type": "Runtime", "LoadingPhase": "Default" }
+  ]
+}

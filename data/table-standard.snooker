@@ -1,0 +1,14 @@
+snooker-table-v1 table-engineering-v1
+table -1.9 -1 1.9 1
+cloth -1.7845 -0.889 1.7845 0.889
+cushions 2
+cushion 1 -1.7 -0.889 0.035 1.7 -0.889 0.035 standard
+cushion 2 -1.7 0.889 0.035 1.7 0.889 0.035 standard
+pockets 2
+pocket 1 -1.7845 -0.889 0 0.09 0.15 standard
+pocket 2 1.7845 0.889 0 0.09 0.15 standard
+spots 1
+spot Black 1.46 0 0.02625
+placements 1
+ball 1 Cue -1 0 0.02625 0.02625 0.142 standard
+end

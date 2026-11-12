@@ -1,0 +1,1 @@
+snooker-cushion-v1 training cushion-training-v1 0.65 0.15 0.032 0.1 0.6108652381980153

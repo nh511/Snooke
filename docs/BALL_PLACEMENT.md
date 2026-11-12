@@ -1,0 +1,7 @@
+# Ball Placement (DAT-008)
+
+Opening generator consumes explicit table color spots, an explicit ball prototype (radius, mass, material) and versioned OpeningLayout (cue center, red apex, rack direction XY, red clearance). It builds IDs 1 cue, 2..7 yellow through black, 8..22 reds in deterministic five-row triangular order. The standalone fixture supplies six color spots but no rail/pocket geometry and is an engineering opening-layout example, not measured or regulation-certified table geometry. Cue placement is configurable; D-area legal placement is future rule validation.
+
+Custom placement sorts by ID, validates complete ball radius inside cloth, center height equal to radius and pair separation at least summed radii (1e-10 m numerical allowance). Training reads table InitialBalls through the same validator. ResetColorPlacement uses explicit named spots and returns an error on occupancy instead of teleporting another ball or inventing alternative-spot rules. RUL-011 must implement official replacement precedence. Error paths leave outputs unchanged; aliases are supported for custom input/output vectors.
+
+OpeningLayout schema: snooker-opening-v1 parameter-version cueXYZ redApexXYZ directionXY clearance. All values are SI/classic-locale, max_digits10 output. Missing spots, overlaps, invalid/overflowing layout, duplicate IDs and out-of-bounds balls reject the complete placement. Identical configs produce byte-identical serialized ball lists in repeated tests; this is layout determinism, not physics determinism or an implemented match.

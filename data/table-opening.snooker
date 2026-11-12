@@ -1,0 +1,15 @@
+snooker-table-v1 opening-spots-engineering-v1
+table -1.9 -1 1.9 1
+cloth -1.7845 -0.889 1.7845 0.889
+cushions 0
+pockets 0
+spots 6
+spot Yellow -1.04 -0.292 0.02625
+spot Green -1.04 0.292 0.02625
+spot Brown -1.04 0 0.02625
+spot Blue 0 0 0.02625
+spot Pink 0.89 0 0.02625
+spot Black 1.46 0 0.02625
+placements 1
+ball 1 Cue -1.2 0.1 0.02625 0.02625 0.142 standard
+end

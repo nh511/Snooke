@@ -1,0 +1,1 @@
+snooker-cushion-v1 standard cushion-engineering-v1 0.8 0.1 0.035 0.08 0.5235987755982988

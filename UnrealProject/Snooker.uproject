@@ -1,0 +1,13 @@
+{
+  "FileVersion": 3,
+  "Category": "Games",
+  "Description": "Snooker standalone core integration host (uncompiled skeleton)",
+  "Modules": [
+    { "Name": "SnookerGame", "Type": "Runtime", "LoadingPhase": "Default" },
+    { "Name": "SnookerEditor", "Type": "Editor", "LoadingPhase": "Default" }
+  ],
+  "Plugins": [
+    { "Name": "SnookerPhysics", "Enabled": true },
+    { "Name": "EnhancedInput", "Enabled": true }
+  ]
+}

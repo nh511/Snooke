@@ -1,0 +1,26 @@
+# Build outputs
+/build/
+/build-*/
+
+# Visual Studio and CMake user files
+/.vs/
+*.suo
+*.user
+*.VC.db
+*.VC.opendb
+CMakeSettings.json
+
+# Unreal generated files (the UE5 project will be added later)
+/UnrealProject/Binaries/
+/UnrealProject/DerivedDataCache/
+/UnrealProject/Intermediate/
+/UnrealProject/Saved/
+/UnrealProject/.vs/
+/UnrealProject/Plugins/**/Binaries/
+/UnrealProject/Plugins/**/Intermediate/
+/UnrealProject/Plugins/**/Saved/
+/UnrealProject/*.sln
+
+# Local tooling and logs
+*.log
+*.tmp
