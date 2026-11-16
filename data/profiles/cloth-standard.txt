@@ -1,0 +1,1 @@
+snooker-cloth-v1 standard engineering-v1 0.2 0.01 0.5 0.001 0.01 0.00001 0.25

@@ -40,9 +40,9 @@ TODO -> IN_PROGRESS -> REVIEW -> DONE
 
 - 优先级：P0
 - 依赖：FND-001
-- 工作：在安装 UE5 后创建 C++ 工程，建立 `SnookerPhysics` Plugin、`SnookerGame` 模块和 Editor 模块；未安装 UE5 时先提交目录和接口设计，不标记编译完成。
+- 工作：在安装 Unreal Engine 5.8.4 后创建 C++ 工程，建立 `SnookerPhysics` Plugin、`SnookerGame` 模块和 Editor 模块；未安装 UE5 时先提交目录和接口设计，不标记编译完成。
 - 产物：`.uproject`、Plugin 描述、`Build.cs`、模块入口和目录结构。
-- 验收：安装 UE5 后可生成项目文件并编译 Development/DebugGame 目标。
+- 验收：使用 UE 5.8.4 可生成项目文件并编译 Development/DebugGame 目标。
 
 ### FND-003 建立资源目录规范
 
@@ -56,7 +56,7 @@ TODO -> IN_PROGRESS -> REVIEW -> DONE
 
 - 优先级：P0
 - 依赖：FND-001
-- 工作：配置 Git LFS 或团队选定的 Perforce 目录；加入 Unreal 忽略规则，记录 UE5 版本、插件和编译工具链。
+- 工作：配置 Git LFS 或团队选定的 Perforce 目录；加入 Unreal 忽略规则，记录 UE 5.8.4、插件和编译工具链。
 - 产物：版本控制配置、提交规范和二进制资源策略。
 - 验收：工程克隆到干净目录后可以恢复；安装 UE5 后能生成项目文件并还原插件配置。
 

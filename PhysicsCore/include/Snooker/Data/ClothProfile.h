@@ -12,6 +12,8 @@ struct ClothProfile
     Scalar SleepLinearSpeed=0, SleepAngularSpeed=0;
     Meters SleepPositionTolerance=0;
     Seconds SleepDuration=0;
+    std::string Serialize() const;
+    static bool Deserialize(const std::string& Text,ClothProfile& Output,std::string* Error=nullptr);
     bool IsValid(std::string* Error=nullptr) const
     {
         const auto token=[](const std::string& v) { return !v.empty() && v.find_first_of(" \t\r\n")==std::string::npos; };

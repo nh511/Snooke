@@ -1,0 +1,29 @@
+snooker-table-v1 six-pocket-engineering-v1
+table -1.9 -1 1.9 1
+cloth -1.7845 -0.889 1.7845 0.889
+cushions 8
+cushion 1 -1.7 -0.889 0.035 0 -0.889 0.035 standard
+cushion 2 0 -0.889 0.035 1.7 -0.889 0.035 standard
+cushion 3 -1.7 0.889 0.035 0 0.889 0.035 standard
+cushion 4 0 0.889 0.035 1.7 0.889 0.035 standard
+cushion 5 -1.7845 -0.75 0.035 -1.7845 0 0.035 standard
+cushion 6 -1.7845 0 0.035 -1.7845 0.75 0.035 standard
+cushion 7 1.7845 -0.75 0.035 1.7845 0 0.035 standard
+cushion 8 1.7845 0 0.035 1.7845 0.75 0.035 standard
+pockets 6
+pocket 1 -1.7845 -0.889 0 0.09 0.15 standard
+pocket 2 0 -0.889 0 0.09 0.15 standard
+pocket 3 1.7845 -0.889 0 0.09 0.15 standard
+pocket 4 -1.7845 0.889 0 0.09 0.15 standard
+pocket 5 0 0.889 0 0.09 0.15 standard
+pocket 6 1.7845 0.889 0 0.09 0.15 standard
+spots 6
+spot Yellow -1.04 -0.292 0.02625
+spot Green -1.04 0.292 0.02625
+spot Brown -1.04 0 0.02625
+spot Blue 0 0 0.02625
+spot Pink 0.89 0 0.02625
+spot Black 1.46 0 0.02625
+placements 1
+ball 1 Cue -1 0 0.02625 0.02625 0.142 standard
+end

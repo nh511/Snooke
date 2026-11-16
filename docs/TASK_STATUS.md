@@ -1,6 +1,6 @@
 # Task Status
 
-Authority: DEVELOPMENT_PLAN.md and EXECUTABLE_TASKS.md (UE5 + standalone C++17).
+Authority: DEVELOPMENT_PLAN.md and EXECUTABLE_TASKS.md (UE 5.8.4 + standalone C++17).
 Unlisted tasks are TODO. A partial implementation is not DONE.
 
 | ID | Status | Evidence / Remaining acceptance |
@@ -46,7 +46,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-001 | DONE | Independent MatchState phases, flags, unsigned scores and file save/restore/print passed |
 | RUL-003 | DONE | Deterministic opening rack, stationary snapshot, reset scores/flags and transactional restart passed |
 | RUL-004 | DONE | Red, color-after-red, final-color cursor and finished Ball On queries passed; FreeBall explicitly unsupported |
-| PHY-018 | REVIEW | Finite jaw/rim/slope/bottom swept contact and rebound passed; complete pot/state acceptance in PHY-019 |
+| PHY-018 | DONE | Pocket geometry, six-pocket engineering bundle, snapshot v3/v2 migration, single-ball pocket descent/recovery service and deterministic mid-pocket restore passed; multi-ball/full-table scheduling remains PHY-021 |
 | PHY-019 | DONE | Pocket state transitions, once-only pot event, potted no-eject and explicit recovery event passed |
 
 ## Execution Rules
@@ -59,7 +59,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 ## Current Toolchain
 
 CMake 4.4.4, VS2022 Build Tools, MSVC 19.44, Windows SDK 10.0.26100.0, Git and Git LFS.
-UE5 is not installed/validated; no UE compilation or asset import is claimed.
+Unreal Engine 5.8.4 is not installed/validated; no UE compilation or asset import is claimed.
 
 ## History
 
@@ -266,3 +266,12 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 ### 本计划执行记录
 
 （按任务追加）
+
+### PHY-018 收尾记录（2026-11-16）
+
+- 状态：DONE（独立核心范围）；UE5 适配和完整多球物理服务不在本任务验收内。
+- 产物：`PhysicsSnapshot` schema v3（每球 `PocketStateData`、袋口 ID、一次性落袋标记和事件游标）；v2 快照可迁移为全 `OnCloth` v3；`ClothProfile` 的 `snooker-cloth-v1` 文件格式；`snooker-physics-bundle-v1` 可复现参数包；六袋工程桌 `data/table-six-pocket.snooker`；袋口单球模拟服务 `PocketSimulation`。
+- 行为验收：袋角接触产生反弹且不触发落袋；进入袋底后只生成一次 `Potted`；袋内中途序列化、恢复和不中断运行的状态/事件一致；从袋内越过袋口可恢复到台面；非法快照和非法服务恢复保持目标对象不变。
+- 证据：`tools/Test-Current.ps1 -Run phy018-close-final`，Debug/Release CTest 各 50/50；包括六袋几何和物理 bundle 逐字节再生成比较。证据目录：`build-evidence/phy018-close-final/`。
+- 边界：本次服务是袋口单球实验服务，不负责球碰球、库边和多球事件全局调度；这些保持 PHY-020/PHY-021 的后续工作。
+- 重试记录：`phy018-close-a2` 首次加入六袋数据时失败，原因是布面文件测试参数路径和旧几何测试假设；`phy018-close-a3` 修复后因证据目录复用未执行，随后用 `phy018-close-a4` 完成验证；新增 bundle 后最终验证通过。没有达到第四次代码失败。

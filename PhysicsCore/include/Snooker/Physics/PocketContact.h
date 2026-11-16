@@ -18,7 +18,7 @@ struct PocketContact
 // Analytic, constant-velocity sphere sweep. Result is earliest contact in [0,Horizon].
 // No hit is a valid query; malformed/unsafe inputs return false without changing output.
 bool FindPocketContact(const BallState& Ball,const PocketGeometry& Pocket,Seconds Horizon,
-                       PocketContact& Output,std::string* Error=nullptr);
+                       PocketContact& Output,std::string* Error=nullptr,bool ApproachingOnly=false);
 // Frictionless local rebound at verified current contact. No pot/scoring side effects.
 bool ReflectPocketContact(BallState& Ball,const PocketGeometry& Pocket,const PocketContact& Contact,
                            std::string* Error=nullptr);

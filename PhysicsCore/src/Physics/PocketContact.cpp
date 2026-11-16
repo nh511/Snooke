@@ -57,11 +57,15 @@ struct Sweep
     const PocketGeometry& Pocket;
     Seconds Horizon;
     PocketContact Best;
+    bool ApproachingOnly=false;
     std::size_t Primitive=0;
     void Offer(double u,const Vec3d& point,const Vec3d& fallback,PocketFeature feature)
     {
         const Vec3d center=Ball.PositionMeters+Ball.LinearVelocityMetersPerSecond*(u*Horizon);
         const Vec3d offset=center-point;const double distance=Length(offset);
+        const Vec3d normal=distance>1e-14?offset*(1/distance):fallback;
+        if(ApproachingOnly && distance>=Ball.RadiusMeters-1e-10 &&
+           Ball.LinearVelocityMetersPerSecond.Dot(normal)>=-1e-10)return;
         if(!Best.Hit || u*Horizon<Best.Time) {
             Best.Hit=true;Best.Time=u*Horizon;Best.PocketId=Pocket.Definition.Id;Best.Feature=feature;
             Best.Primitive=Primitive;Best.Point=point;Best.Normal=distance>1e-14?offset*(1/distance):fallback;
@@ -115,7 +119,7 @@ struct Sweep
 };
 }
 bool FindPocketContact(const BallState& Ball,const PocketGeometry& Pocket,Seconds Horizon,
-                       PocketContact& Output,std::string* Error)
+                       PocketContact& Output,std::string* Error,bool ApproachingOnly)
 {
     if(!Ball.IsValid(Error) || !Validate(Pocket,Error))return false;
     if(!IsFinite(Horizon) || Horizon<0 || !Safe(Ball.PositionMeters) || !Safe(Ball.LinearVelocityMetersPerSecond) ||
@@ -123,6 +127,7 @@ bool FindPocketContact(const BallState& Ball,const PocketGeometry& Pocket,Second
        !Safe(Ball.PositionMeters+Ball.LinearVelocityMetersPerSecond*Horizon))
         return Fail(Error,"unsafe pocket sweep bounds or horizon");
     Sweep sweep{Ball,Pocket,Horizon,{}};
+    sweep.ApproachingOnly=ApproachingOnly;
     for(const auto* jaw:{&Pocket.LeftJaw,&Pocket.RightJaw})
         for(std::size_t i=1;i<jaw->size();++i)sweep.Segment((*jaw)[i-1],(*jaw)[i],PocketFeature::Jaw);
     // Mouth is an opening, not a solid segment across the bag. Only its side lips are solid.

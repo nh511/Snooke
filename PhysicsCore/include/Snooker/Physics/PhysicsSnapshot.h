@@ -2,6 +2,7 @@
 
 #include "Snooker/Physics/BallState.h"
 #include "Snooker/Physics/PhysicsClock.h"
+#include "Snooker/Physics/PocketState.h"
 
 #include <cstdint>
 #include <string>
@@ -18,7 +19,7 @@ enum class ESnapshotPhase : std::uint8_t
 
 struct PhysicsSnapshot
 {
-    static constexpr std::uint32_t CurrentSchemaVersion = 2;
+    static constexpr std::uint32_t CurrentSchemaVersion = 3;
     // Resource safety limit for text loading, not a snooker rules limit.
     static constexpr std::size_t MaxSerializedBalls = 4096;
 
@@ -30,6 +31,9 @@ struct PhysicsSnapshot
     Seconds FixedStepSeconds = 1.0/240;
     Seconds AccumulatorSeconds = 0.0;
     std::vector<FBallState> Balls;
+    // Empty is shorthand for an all-OnCloth state, including legacy callers.
+    std::vector<PocketStateData> PocketStates;
+    std::uint64_t EventCount = 0;
 
     bool IsValid(std::string* OutError = nullptr) const;
     bool operator==(const PhysicsSnapshot& Other) const;

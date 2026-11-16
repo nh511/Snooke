@@ -49,7 +49,7 @@ bool FPhysicsSnapshot::IsValid(std::string* OutError) const
         SetError(OutError, "invalid snapshot phase or ball count");
         return false;
     }
-    if (SchemaVersion != CurrentSchemaVersion)
+    if (SchemaVersion != CurrentSchemaVersion || (!PocketStates.empty() && PocketStates.size()!=Balls.size()))
     {
         SetError(OutError, "unsupported physics snapshot schema version");
         return false;
@@ -77,6 +77,17 @@ bool FPhysicsSnapshot::IsValid(std::string* OutError) const
         {
             return false;
         }
+        if(!PocketStates.empty()) {
+            const auto& p=PocketStates[Index];
+            if(static_cast<unsigned>(p.State)>4 || (p.State==PocketState::Potted)!=p.PotEventEmitted ||
+               ((p.State==PocketState::InPocket || p.State==PocketState::Potted) && p.PocketId==0) ||
+               ((p.State==PocketState::OnCloth || p.State==PocketState::Ejected) && p.PocketId!=0) ||
+               (p.State==PocketState::Potted && (!Balls[Index].Sleeping ||
+                 Balls[Index].LinearVelocityMetersPerSecond.LengthSquared()!=0 ||
+                 Balls[Index].AngularVelocityRadiansPerSecond.LengthSquared()!=0))) {
+                SetError(OutError,"inconsistent snapshot pocket state");return false;
+            }
+        }
         for (std::size_t OtherIndex = 0; OtherIndex < Index; ++OtherIndex)
         {
             if (Balls[Index].Id == Balls[OtherIndex].Id)
@@ -95,7 +106,8 @@ bool FPhysicsSnapshot::operator==(const FPhysicsSnapshot& Other) const
         PhysicsParameterVersion != Other.PhysicsParameterVersion || StepIndex != Other.StepIndex ||
         !NearlyEqual(SimulationTimeSeconds, Other.SimulationTimeSeconds) ||
         !NearlyEqual(FixedStepSeconds, Other.FixedStepSeconds) ||
-        !NearlyEqual(AccumulatorSeconds, Other.AccumulatorSeconds) || Balls.size() != Other.Balls.size())
+        !NearlyEqual(AccumulatorSeconds, Other.AccumulatorSeconds) || Balls.size() != Other.Balls.size() ||
+        EventCount!=Other.EventCount)
     {
         return false;
     }
@@ -105,6 +117,9 @@ bool FPhysicsSnapshot::operator==(const FPhysicsSnapshot& Other) const
         {
             return false;
         }
+        const auto a=PocketStates.empty()?PocketStateData{}:PocketStates[Index];
+        const auto b=Other.PocketStates.empty()?PocketStateData{}:Other.PocketStates[Index];
+        if(a.State!=b.State || a.PocketId!=b.PocketId || a.PotEventEmitted!=b.PotEventEmitted)return false;
     }
     return true;
 }
@@ -115,10 +130,13 @@ std::string FPhysicsSnapshot::Serialize() const
     Stream.imbue(std::locale::classic());
     Stream << std::setprecision(std::numeric_limits<Scalar>::max_digits10)
            << SchemaVersion << ' ' << PhaseToString(Phase) << ' ' << PhysicsParameterVersion << ' ' << StepIndex << ' '
-           << SimulationTimeSeconds << ' ' << FixedStepSeconds << ' ' << AccumulatorSeconds << ' ' << Balls.size();
-    for (const FBallState& Ball : Balls)
+           << SimulationTimeSeconds << ' ' << FixedStepSeconds << ' ' << AccumulatorSeconds << ' ' << Balls.size()
+           << ' ' << EventCount;
+    for (std::size_t i=0;i<Balls.size();++i)
     {
-        Stream << '\n' << Ball.Serialize();
+        const auto p=PocketStates.empty()?PocketStateData{}:PocketStates[i];
+        Stream << '\n' << std::quoted(Balls[i].Serialize()) << ' ' << static_cast<unsigned>(p.State)
+               << ' ' << p.PocketId << ' ' << unsigned(p.PotEventEmitted);
     }
     return Stream.str();
 }
@@ -136,6 +154,11 @@ bool FPhysicsSnapshot::Deserialize(const std::string& Serialized, FPhysicsSnapsh
         SetError(OutError, "invalid physics snapshot header");
         return false;
     }
+    const bool legacy=Candidate.SchemaVersion==2;
+    if(!legacy && (Candidate.SchemaVersion!=CurrentSchemaVersion || !ReadUnsigned(Stream,Candidate.EventCount))) {
+        SetError(OutError,"unsupported or invalid snapshot schema");return false;
+    }
+    Candidate.SchemaVersion=CurrentSchemaVersion;
     std::string Line;
     std::getline(Stream, Line);
     if (BallCount > MaxSerializedBalls || Line.find_first_not_of(" \t\r") != std::string::npos)
@@ -152,11 +175,23 @@ bool FPhysicsSnapshot::Deserialize(const std::string& Serialized, FPhysicsSnapsh
             return false;
         }
         FBallState Ball;
-        if (!FBallState::Deserialize(Line, Ball, OutError))
+        PocketStateData pocket;
+        std::string ballText=Line;
+        if(!legacy) {
+            std::istringstream row(Line);row.imbue(std::locale::classic());
+            unsigned state=0,emitted=0;
+            if(!(row>>std::quoted(ballText)) || !ReadUnsigned(row,state) || !ReadUnsigned(row,pocket.PocketId) ||
+               !ReadUnsigned(row,emitted) || state>4 || emitted>1 || !(row>>std::ws).eof()) {
+                SetError(OutError,"invalid snapshot pocket row");return false;
+            }
+            pocket.State=static_cast<PocketState>(state);pocket.PotEventEmitted=emitted!=0;
+        }
+        if (!FBallState::Deserialize(ballText, Ball, OutError))
         {
             return false;
         }
         Candidate.Balls.push_back(Ball);
+        Candidate.PocketStates.push_back(pocket);
     }
     Stream >> std::ws;
     if (!Stream.eof())
@@ -180,12 +215,18 @@ PhysicsSnapshot PhysicsSnapshot::Capture(const PhysicsClock& Clock, const std::v
     Result.StepIndex=Clock.State().CompletedSteps; Result.SimulationTimeSeconds=Clock.SimulationTime();
     Result.FixedStepSeconds=Clock.State().FixedStep; Result.AccumulatorSeconds=Clock.State().Accumulator;
     Result.Balls=Balls;
+    Result.PocketStates.resize(Balls.size());
     return Result;
 }
 bool PhysicsSnapshot::Restore(PhysicsClock& Clock, std::vector<BallState>& Balls,
                               const std::string& ExpectedParameterVersion, std::string* Error) const
 {
     if (!IsValid(Error)) return false;
+    // Legacy clock/balls API must not silently discard service-owned state.
+    for(const auto& p:PocketStates)if(p.State!=PocketState::OnCloth || p.PocketId || p.PotEventEmitted) {
+        SetError(Error,"use a pocket-aware service to restore pocket state");return false;
+    }
+    if(EventCount) {SetError(Error,"use a service to restore the event cursor");return false;}
     if (PhysicsParameterVersion!=ExpectedParameterVersion)
     {
         SetError(Error,"snapshot parameter version does not match loaded configuration");
