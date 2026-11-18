@@ -56,7 +56,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-009 | DONE | Exact/tolerant trajectory, event and final-state comparison with first-field reports; contract tests and cross-config 22-ball/center outputs passed; Debug/Release 58/58 |
 | REP-002 | DONE | Recomputed center/22-ball shot-v2 through shared service; exact events/final comparison and tampering rejection passed Debug/Release 59/59 |
 | VAL-005 | DONE | Follow/draw collision, moving slide-to-roll transition, stop/spin traces and exact replay passed Debug/Release 61/61 |
-| VAL-006 | IN_PROGRESS | Adding mirrored side-spin cushion trajectories with nonzero deflection assertions |
+| VAL-006 | DONE | Left/right cue offsets produce mirrored nonzero cushion deflection and axial spin; baselines/replay passed Debug/Release 62/62 |
+| VAL-007 | IN_PROGRESS | Adding one/two-rail, touching-rail and spin regressions with FPS event/final parity |
 
 ## Execution Rules
 
@@ -346,3 +347,8 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - follow/draw 两组固定基线使用相同球桌和球杆，杆速 0.6 m/s，只改变 Z 打点 ±0.5r。目标球相距 0.075 m；高杆首次接触第 11 步后母球正向跟进，低杆第 13 步后母球出现负向速度，独立 Node 断言不是只看终点。
 - 高杆移动中滑滚转换第 5 步，停止第 902 步/3.7583333333333333 s；低杆转换第 24 步，停止第 736 步/3.0666666666666664 s。CSV 每步包含全部速度/角速度，最终均严格零速度且睡眠。
 - 两组 CSV 约 204 KB/165 KB，均小于 1 MiB，附初始快照、输入、完整物理记录。Test-Current.ps1 -Run val005-a0，Debug/Release 61/61，包含逐字段基线比较和独立物理重放。参数仍是工程样例。
+
+### VAL-006 验收（2026-11-18）
+
+- 左右塞杆速 0.4 m/s、Y 偏移 ±0.2r，初始球位在对称位置，经真实库边冲量产生非零横向速度。极向量反射 Y，轴向量反射 X/Z；2587 个逐步样本的镜像误差不超过 1e-9。
+- 两组均第 2586 步/10.775 s 停止，轨迹约 351 KB/353 KB。Test-Current.ps1 -Run val006-a0，Debug/Release 62/62，含独立物理重放、逐步固定基线和镜像断言，不允许两组都无偏移来蒙混过关。

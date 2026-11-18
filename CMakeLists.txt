@@ -84,6 +84,11 @@ add_test(NAME baseline_center COMMAND "${CMAKE_COMMAND}"
     "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/baseline.cmake")
 set_tests_properties(baseline_center PROPERTIES TIMEOUT 60)
+add_test(NAME baseline_side_spin COMMAND "${CMAKE_COMMAND}"
+    "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DREPLAY=$<TARGET_FILE:snooker_replay>" "-DNODE=${NODE_EXECUTABLE}"
+    "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/side-baseline.cmake")
+set_tests_properties(baseline_side_spin PROPERTIES TIMEOUT 90)
 foreach(mode IN ITEMS follow draw)
     add_test(NAME baseline_${mode} COMMAND "${CMAKE_COMMAND}"
         "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DREPLAY=$<TARGET_FILE:snooker_replay>" "-DNODE=${NODE_EXECUTABLE}"
