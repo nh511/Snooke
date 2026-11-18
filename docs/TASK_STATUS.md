@@ -58,7 +58,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-005 | DONE | Follow/draw collision, moving slide-to-roll transition, stop/spin traces and exact replay passed Debug/Release 61/61 |
 | VAL-006 | DONE | Left/right cue offsets produce mirrored nonzero cushion deflection and axial spin; baselines/replay passed Debug/Release 62/62 |
 | VAL-007 | DONE | One/two-rail, touching-rail and spin traces plus 30/60/120/144 FPS exact event/final/replay parity passed Debug/Release 66/66 |
-| VAL-008 | IN_PROGRESS | Adding explicit entry/jaw/mouth-stop/recovery/capture pocket baselines |
+| VAL-008 | DONE | Entry/jaw/mouth-stop/recovery/capture fixtures assert pot/no-pot and exact midpoint restore; Debug/Release 67/67 |
 
 ## Execution Rules
 
@@ -360,3 +360,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 一库停止第 361 步、贴库第 557 步、两库第 3725 步且至少两次真实碰库；CSV 分别约 61/99/536 KB，均小于 1 MiB。首次两库夹具路线太长只碰一库，保留失败后改为右上区域两库路线，不降低事件数要求。
 - 两库重试 1 发现斜面/袋边同时接触误报 stale pocket response contact，故障保留 build/two-rail-r1-generated/fault.txt。原因是响应重查任意最早接触替换了原片元；改为按原 Primitive 重验，保持点/法线/特征/穿透校验，伪造片元号仍拒绝。把故障步 206 检查点加入服务回归，不以改路线掩盖问题。
 - Test-Current.ps1 -Run val007-final，最新相同源码 Debug/Release 66/66，全部 exit 0。既有全部基线未重生成且保持通过；val007-a2 构建期间补过测试，只作为中间证据。
+
+### VAL-008 验收（2026-11-18）
+
+- data/baselines/pocket 固定五组单球袋口实验输入、最终快照和完整事件。entry/capture 均恰好一次 Potted；jaw/mouth-stop/recovery 均零 Potted，jaw 按恢复系数验证真实反弹，recovery 恰好一次回台，停口保持静止无事件。
+- 每组在一半步数处序列化再恢复，逐步快照和后续事件与连续运行逐字节相同；全套文件约 116 KB。正入实验经历多次斜面弹跳，只有袋底捕获才记落袋，不按入口触发计分。
+- Test-Current.ps1 -Run val008-a0，Debug/Release 67/67，全部 exit 0。本任务是独立袋口核心实验，不冒充 UI/规则计分/实测校准；统一服务的 22 球进袋已在 PHY-021 验收。
