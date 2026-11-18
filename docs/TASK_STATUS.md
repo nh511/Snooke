@@ -59,7 +59,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-006 | DONE | Left/right cue offsets produce mirrored nonzero cushion deflection and axial spin; baselines/replay passed Debug/Release 62/62 |
 | VAL-007 | DONE | One/two-rail, touching-rail and spin traces plus 30/60/120/144 FPS exact event/final/replay parity passed Debug/Release 66/66 |
 | VAL-008 | DONE | Entry/jaw/mouth-stop/recovery/capture fixtures assert pot/no-pot and exact midpoint restore; Debug/Release 67/67 |
-| REP-003 | IN_PROGRESS | Sparse checkpoint replay controller implemented; step/time/first-collision/first-pot/fault seek validation pending |
+| REP-003 | DONE | Sparse solver checkpoints, exact step/time/event seek, first collision/pot and fault checkpoint tests passed Debug/Release 68/68 |
 
 ## Execution Rules
 
@@ -373,3 +373,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - tools/shot-viewer.html 直接本地打开，读取 result.json+trajectory.csv，显示真实多球、轨迹、库/袋几何、接触点、事件列表、按事件跳转、步进、播放和调试开关；旧 trajectory.html 保留单球功能并链接新入口。所有文本用 textContent，不执行外部文件脚本。
 - Chrome 原生 CDP 自动检查真实 22 球 10602 帧、13 事件加载，首次碰撞跳转、末步/前后步/播放，桌面 1280x800 和手机 390x844 无横向溢出；采样 1116 种画布颜色，无 JS 异常。证据 build-evidence/shot-viewer-1795001048505/{desktop.png,mobile.png,result.json}，截图已检查。
 - Test-Current.ps1 -Run cor006-a0，Debug/Release 67/67；独立 Node 检查多球解析和坏数据拒绝。浏览器采用已有本机 Chrome/CDP，不宣称使用了未安装的 Playwright，也不需要下载在线资源。
+
+### REP-003 验收（2026-11-18）
+
+- ReplayController 先实际重算并校验记录，每 120 步保留求解器检查点，跳转至最近前置检查点后重算，不保存所有步/所有球的全量常驻缓存。SeekStep/SeekTime/SeekEvent/SeekFault 提供只读快照，时间定位为首个不早于目标时间的完成物理步。
+- 测试逐个步号与连续模拟序列化快照一致、逆序事件跳转、首个真实碰撞、首个真实落袋，以及超时故障的真实故障前检查点。非法步/事件/NaN 时间或坏记录不会改变当前状态。
+- Test-Current.ps1 -Run rep003-a0，Debug/Release 68/68，全部 exit 0。阶段 2 的 11 项已完成；准备干净副本验证和阶段推送。完成数 43/121（REVIEW=10，BLOCKED=2，TODO=66）。

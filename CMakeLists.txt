@@ -32,6 +32,7 @@ add_library(PhysicsCore STATIC
     PhysicsCore/src/Replay/ShotRecord.cpp
     PhysicsCore/src/Replay/PhysicsShotRecord.cpp
     PhysicsCore/src/Replay/ShotReplay.cpp
+    PhysicsCore/src/Replay/ReplayController.cpp
     PhysicsCore/src/Replay/CollisionLog.cpp
     PhysicsCore/src/Shot/CueProfile.cpp
     PhysicsCore/src/Shot/CueImpulse.cpp
@@ -60,6 +61,10 @@ add_dependencies(Tools snooker_pocket_bundle)
 add_executable(snooker_core_info tools/core_info.cpp)
 target_link_libraries(snooker_core_info PRIVATE PhysicsCore RulesCore)
 enable_testing()
+add_executable(snooker_test_replay_controller tests/replay_controller.cpp)
+target_link_libraries(snooker_test_replay_controller PRIVATE PhysicsCore)
+add_test(NAME core_replay_controller COMMAND snooker_test_replay_controller "${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/center/record.shot")
+set_tests_properties(core_replay_controller PROPERTIES TIMEOUT 120)
 add_executable(snooker_test_pocket_baseline tests/pocket_baseline.cpp)
 target_link_libraries(snooker_test_pocket_baseline PRIVATE PhysicsCore)
 add_test(NAME baseline_pocket_cases COMMAND snooker_test_pocket_baseline
@@ -147,6 +152,7 @@ add_dependencies(Tests snooker_test_physics_record)
 add_dependencies(Tests snooker_test_shot_replay snooker_replay)
 add_dependencies(Tests snooker_test_rail_baseline)
 add_dependencies(Tests snooker_test_pocket_baseline)
+add_dependencies(Tests snooker_test_replay_controller)
 add_test(NAME UnitsFailureExit COMMAND snooker_test_units --expect-centimeters 99)
 set_tests_properties(UnitsFailureExit PROPERTIES WILL_FAIL TRUE)
 add_test(NAME tools_core_info COMMAND snooker_core_info)
