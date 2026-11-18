@@ -1,0 +1,11 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {parse}=require('../tools/shot-data.js');
+const dir=process.argv[2];if(!dir)throw Error('result directory required');
+const json=fs.readFileSync(path.join(dir,'result.json'),'utf8'),csv=fs.readFileSync(path.join(dir,'trajectory.csv'),'utf8');
+const data=parse(json,csv);assert.equal(data.frames.at(-1).step,data.result.final.step);assert(data.frames.length>2);
+assert.throws(()=>parse('invalid',csv));assert.throws(()=>parse(json,'invalid'));
+const lines=csv.trim().split(/\r?\n/);assert.throws(()=>parse(json,lines.slice(0,-1).join('\n')));
+assert.throws(()=>parse(json,csv.replace(',0,',',NaN,')));
+const invalid=JSON.parse(json);invalid.geometry.segments[0].start[0]='bad';assert.throws(()=>parse(JSON.stringify(invalid),csv));
+console.log('PASS multi-ball viewer parser and invalid input rejection');

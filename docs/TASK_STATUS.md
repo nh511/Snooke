@@ -27,7 +27,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | PHY-006 | DONE | Sliding torque integration, follow/backspin and symmetric side-spin decay passed |
 | PHY-007 | DONE | High-speed remains sliding; contact-friction transition and low-slip hysteresis passed |
 | PHY-008 | DONE | Sustained sleep/wake/timer guards and settled state at 30/60/120 FPS passed |
-| COR-006 | REVIEW | Single-ball CSV/viewer verified in real Chrome; cushion/pocket/collision event display and full shot timeline remain incomplete |
+| COR-006 | DONE | Multi-ball viewer/geometry/event jump/playback passed Chrome desktop/mobile plus Debug/Release parser regression 67/67 |
 | DAT-002 | REVIEW | Two table files and round-trip/invalid-record tests passed; UE DataAsset/CLI parity unvalidated |
 | DAT-004 | REVIEW | Versioned cushion files/table reference/bounds/locale tests passed; UCushionProfileAsset unvalidated |
 | DAT-005 | REVIEW | Pocket file/geometry/capture/ejection bounds passed; UPocketProfileAsset and actual pocket solver unvalidated |
@@ -59,6 +59,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-006 | DONE | Left/right cue offsets produce mirrored nonzero cushion deflection and axial spin; baselines/replay passed Debug/Release 62/62 |
 | VAL-007 | DONE | One/two-rail, touching-rail and spin traces plus 30/60/120/144 FPS exact event/final/replay parity passed Debug/Release 66/66 |
 | VAL-008 | DONE | Entry/jaw/mouth-stop/recovery/capture fixtures assert pot/no-pot and exact midpoint restore; Debug/Release 67/67 |
+| REP-003 | IN_PROGRESS | Sparse checkpoint replay controller implemented; step/time/first-collision/first-pot/fault seek validation pending |
 
 ## Execution Rules
 
@@ -366,3 +367,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - data/baselines/pocket 固定五组单球袋口实验输入、最终快照和完整事件。entry/capture 均恰好一次 Potted；jaw/mouth-stop/recovery 均零 Potted，jaw 按恢复系数验证真实反弹，recovery 恰好一次回台，停口保持静止无事件。
 - 每组在一半步数处序列化再恢复，逐步快照和后续事件与连续运行逐字节相同；全套文件约 116 KB。正入实验经历多次斜面弹跳，只有袋底捕获才记落袋，不按入口触发计分。
 - Test-Current.ps1 -Run val008-a0，Debug/Release 67/67，全部 exit 0。本任务是独立袋口核心实验，不冒充 UI/规则计分/实测校准；统一服务的 22 球进袋已在 PHY-021 验收。
+
+### COR-006 多球查看器验收（2026-11-18）
+
+- tools/shot-viewer.html 直接本地打开，读取 result.json+trajectory.csv，显示真实多球、轨迹、库/袋几何、接触点、事件列表、按事件跳转、步进、播放和调试开关；旧 trajectory.html 保留单球功能并链接新入口。所有文本用 textContent，不执行外部文件脚本。
+- Chrome 原生 CDP 自动检查真实 22 球 10602 帧、13 事件加载，首次碰撞跳转、末步/前后步/播放，桌面 1280x800 和手机 390x844 无横向溢出；采样 1116 种画布颜色，无 JS 异常。证据 build-evidence/shot-viewer-1795001048505/{desktop.png,mobile.png,result.json}，截图已检查。
+- Test-Current.ps1 -Run cor006-a0，Debug/Release 67/67；独立 Node 检查多球解析和坏数据拒绝。浏览器采用已有本机 Chrome/CDP，不宣称使用了未安装的 Playwright，也不需要下载在线资源。

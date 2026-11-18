@@ -33,3 +33,7 @@ execute_process(COMMAND "${REPLAY}" "${out}/record.shot" RESULT_VARIABLE replay_
 if(NOT replay_code EQUAL 0)
     message(FATAL_ERROR "22-ball physical replay failed: ${replay_log}; ${replay_error}")
 endif()
+execute_process(COMMAND "${NODE}" "${SOURCE}/tests/shot-data.cjs" "${out}" RESULT_VARIABLE viewer_code)
+if(NOT viewer_code EQUAL 0)
+    message(FATAL_ERROR "multi-ball viewer data validation failed")
+endif()
