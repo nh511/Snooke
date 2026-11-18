@@ -53,7 +53,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REP-001 | DONE | shot-v2 embeds bundle/input/initial/final/events; real 22-ball record file round trip and malformed/order/reference/version rejection passed Debug/Release 56/56 |
 | VAL-003 | DONE | Fixed-step multi-ball CSV and JSON snapshots/parameters/events/geometry independently parsed by Node; Debug/Release 56/56 |
 | VAL-004 | DONE | Center-strike 476-row short baseline, explicit speed perturbation and first differing step/ball/field report passed Debug/Release 57/57 |
-| VAL-009 | IN_PROGRESS | Extending exact/tolerant deterministic comparison to events, final state and cross-configuration outputs |
+| VAL-009 | DONE | Exact/tolerant trajectory, event and final-state comparison with first-field reports; contract tests and cross-config 22-ball/center outputs passed; Debug/Release 58/58 |
+| REP-002 | IN_PROGRESS | Recomputing saved shot-v2 records through the shared service and comparing all events/final state |
 
 ## Execution Rules
 
@@ -325,3 +326,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 新建 data/baselines/center，真实 Release 中杆输入 0.2 m/s：475 步/1.9791666666666667 s 后静止，476 行 CSV、3 事件，终点 x=0.14873083962918993 m，CSV 57685 字节。参数包与输入/快照/完整记录一并关联，不是实测值。
 - tools/compare.cjs 按步序逐字段比较，连续浮点容差可选，离散字段精确比较；首次偏差报告 step、ball、field、expected、actual。baseline_center 重算基线要求 1e-9 内一致，另将杆速增加 1e-6，要求 FAIL 且给出第一处差异。
 - Test-Current.ps1 -Run val004-a0，Debug/Release 57/57，全部 exit 0。新建基线原因：统一服务首次中杆短程回归；后续更新必须说明原因，不用生成值替换失败期望。
+
+### VAL-009 验收（2026-11-18）
+
+- tools/compare.cjs 支持 CSV 或结果目录。目录比较先逐步轨迹，再参数/事件/终态 JSON；连续值容差可选，ID/步号/序号/状态精确比较，默认容差 0。首差异报告字段与数值，轨迹/事件还带步号和球。
+- comparator_contract 人为扰动轨迹 x、事件时间/序号、速度和袋口状态，要求 FAIL；同输入重复运行目录要求零容差 PASS。Test-Current.ps1 -Run val009-a0，双配置 58/58，全部 exit 0。
+- 交叉比较实际 Debug/Release 目录：中心短杆 476 行/3 事件、22 球开局 233244 行/13 事件，轨迹+事件+终态默认容差 0 均 PASS。本机/本工具链结论，不宣称跨平台逐位确定性。

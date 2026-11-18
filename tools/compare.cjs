@@ -19,11 +19,39 @@ function compare(a,b,tolerance=0) {
   }
   return expected.rows.length===actual.rows.length?{pass:true,rows:expected.rows.length}:{pass:false,field:'row_count',expected:expected.rows.length,actual:actual.rows.length};
 }
+function structured(a,b,tolerance=0,field='$') {
+  if(typeof a!==typeof b || a===null || b===null) return a===b?null:{pass:false,field,expected:a,actual:b};
+  if(typeof a==='number') {
+    if(!Number.isFinite(a) || !Number.isFinite(b))throw Error('nonfinite result field');
+    const discrete=/\.(sequence|step|ball|other|kind|id|pocketState|pocketId|eventCount)$/.test(field);
+    return Math.abs(a-b)<=(discrete?0:tolerance)?null:{pass:false,field,expected:a,actual:b};
+  }
+  if(typeof a!=='object')return a===b?null:{pass:false,field,expected:a,actual:b};
+  const ka=Object.keys(a).filter(k=>k!=='serialized'),kb=Object.keys(b).filter(k=>k!=='serialized');
+  if(ka.join(',')!==kb.join(','))return {pass:false,field:field+'.keys',expected:ka,actual:kb};
+  for(const k of ka){const diff=structured(a[k],b[k],tolerance,field+'.'+k);if(diff)return diff;}
+  return null;
+}
+function directories(expected,actual,tolerance=0) {
+  if(!Number.isFinite(tolerance) || tolerance<0)throw Error('invalid comparison tolerance');
+  const load=(dir,name)=>fs.readFileSync(path.join(dir,name),'utf8');
+  const trace=compare(load(expected,'trajectory.csv'),load(actual,'trajectory.csv'),tolerance);
+  if(!trace.pass)return trace;
+  const a=JSON.parse(load(expected,'result.json')),b=JSON.parse(load(actual,'result.json'));
+  if(a.schema!=='snooker-result-v1' || b.schema!==a.schema)throw Error('unsupported result schema');
+  const diff=structured(a,b,tolerance);
+  if(diff && diff.field.startsWith('$.events.')) {
+    const index=Number(diff.field.split('.')[2]);diff.step=a.events[index]?.step;diff.ball=a.events[index]?.ball;
+  }
+  return diff||{pass:true,rows:trace.rows,events:a.events.length};
+}
 if(require.main===module) {
   try {
     if(process.argv.length<4 || process.argv.length>5)throw Error('usage: node tools/compare.cjs expected.csv actual.csv [tolerance]');
-    const result=compare(fs.readFileSync(process.argv[2],'utf8'),fs.readFileSync(process.argv[3],'utf8'),Number(process.argv[4]||0));
+    const result=fs.statSync(process.argv[2]).isDirectory()?
+      directories(process.argv[2],process.argv[3],Number(process.argv[4]||0)):
+      compare(fs.readFileSync(process.argv[2],'utf8'),fs.readFileSync(process.argv[3],'utf8'),Number(process.argv[4]||0));
     console.log((result.pass?'PASS ':'FAIL ')+JSON.stringify(result));process.exitCode=result.pass?0:1;
   }catch(error){console.error('ERROR '+error.message);process.exitCode=2;}
 }
-module.exports={compare,trajectory};
+module.exports={compare,trajectory,structured,directories};
