@@ -31,6 +31,7 @@ add_library(PhysicsCore STATIC
     PhysicsCore/src/Physics/AngularUpdate.cpp
     PhysicsCore/src/Replay/ShotRecord.cpp
     PhysicsCore/src/Replay/PhysicsShotRecord.cpp
+    PhysicsCore/src/Replay/ShotReplay.cpp
     PhysicsCore/src/Replay/CollisionLog.cpp
     PhysicsCore/src/Shot/CueProfile.cpp
     PhysicsCore/src/Shot/CueImpulse.cpp
@@ -44,6 +45,9 @@ add_custom_target(Tools DEPENDS snooker_core_info snooker_validation snooker_sin
 add_executable(snooker_pocket_bundle tools/pocket_bundle.cpp)
 add_executable(snooker_fault_replay tools/fault_replay.cpp)
 add_executable(snooker_simulate tools/simulate.cpp)
+add_executable(snooker_replay tools/replay.cpp)
+target_link_libraries(snooker_replay PRIVATE PhysicsCore)
+add_dependencies(Tools snooker_replay)
 add_executable(snooker_baseline_seed tools/baseline_seed.cpp)
 target_link_libraries(snooker_baseline_seed PRIVATE PhysicsCore)
 add_dependencies(Tools snooker_baseline_seed)
@@ -56,6 +60,10 @@ add_dependencies(Tools snooker_pocket_bundle)
 add_executable(snooker_core_info tools/core_info.cpp)
 target_link_libraries(snooker_core_info PRIVATE PhysicsCore RulesCore)
 enable_testing()
+add_executable(snooker_test_shot_replay tests/shot_replay.cpp)
+target_link_libraries(snooker_test_shot_replay PRIVATE PhysicsCore)
+add_test(NAME core_shot_replay COMMAND snooker_test_shot_replay "${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/center/record.shot")
+set_tests_properties(core_shot_replay PROPERTIES TIMEOUT 30)
 add_test(NAME comparator_contract COMMAND "${NODE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/compare.cjs")
 add_executable(snooker_test_physics_record tests/physics_record.cpp)
 target_link_libraries(snooker_test_physics_record PRIVATE PhysicsCore)
@@ -68,6 +76,7 @@ add_test(NAME physics_service_cli COMMAND "${CMAKE_COMMAND}"
     "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}"
     "-DRECORD_TEST=$<TARGET_FILE:snooker_test_physics_record>"
     "-DNODE=${NODE_EXECUTABLE}"
+    "-DREPLAY=$<TARGET_FILE:snooker_replay>"
     "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DCONFIG=$<CONFIG>" -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/service_cli.cmake")
 set_tests_properties(physics_service_cli PROPERTIES FIXTURES_REQUIRED service_files TIMEOUT 240)
 add_test(NAME baseline_center COMMAND "${CMAKE_COMMAND}"
@@ -109,6 +118,7 @@ add_dependencies(Tests snooker_test_pocket_simulation)
 add_dependencies(Tests snooker_test_physics_fault snooker_fault_replay)
 add_dependencies(Tests snooker_test_physics_service)
 add_dependencies(Tests snooker_test_physics_record)
+add_dependencies(Tests snooker_test_shot_replay snooker_replay)
 add_test(NAME UnitsFailureExit COMMAND snooker_test_units --expect-centimeters 99)
 set_tests_properties(UnitsFailureExit PROPERTIES WILL_FAIL TRUE)
 add_test(NAME tools_core_info COMMAND snooker_core_info)

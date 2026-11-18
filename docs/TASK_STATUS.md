@@ -54,7 +54,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-003 | DONE | Fixed-step multi-ball CSV and JSON snapshots/parameters/events/geometry independently parsed by Node; Debug/Release 56/56 |
 | VAL-004 | DONE | Center-strike 476-row short baseline, explicit speed perturbation and first differing step/ball/field report passed Debug/Release 57/57 |
 | VAL-009 | DONE | Exact/tolerant trajectory, event and final-state comparison with first-field reports; contract tests and cross-config 22-ball/center outputs passed; Debug/Release 58/58 |
-| REP-002 | IN_PROGRESS | Recomputing saved shot-v2 records through the shared service and comparing all events/final state |
+| REP-002 | DONE | Recomputed center/22-ball shot-v2 through shared service; exact events/final comparison and tampering rejection passed Debug/Release 59/59 |
+| VAL-005 | IN_PROGRESS | Creating follow/draw and slide-to-roll regression fixtures with real trajectories and physical assertions |
 
 ## Execution Rules
 
@@ -332,3 +333,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - tools/compare.cjs 支持 CSV 或结果目录。目录比较先逐步轨迹，再参数/事件/终态 JSON；连续值容差可选，ID/步号/序号/状态精确比较，默认容差 0。首差异报告字段与数值，轨迹/事件还带步号和球。
 - comparator_contract 人为扰动轨迹 x、事件时间/序号、速度和袋口状态，要求 FAIL；同输入重复运行目录要求零容差 PASS。Test-Current.ps1 -Run val009-a0，双配置 58/58，全部 exit 0。
 - 交叉比较实际 Debug/Release 目录：中心短杆 476 行/3 事件、22 球开局 233244 行/13 事件，轨迹+事件+终态默认容差 0 均 PASS。本机/本工具链结论，不宣称跨平台逐位确定性。
+
+### REP-002 验收（2026-11-18）
+
+- ReplayShot/snooker_replay 从记录实际参数、快照、输入重新模拟，每次生成事件立即与记录比较，最终快照逐字节比较，不把已记录事件或终态写进物理状态。构建版本不支持时明确拒绝。
+- Test-Current.ps1 -Run rep002-a0，Debug/Release 59/59。中心记录重算结果相同；改冲量/终点/构建版本则失败，原输出不变；真实 CLI 22 球开局 record.shot 在独立进程中重放通过。
+- 当前范围：本机同求解器构建的确定性重放；未宣称跨平台一致。未来增加的高低杆/库边/袋口基线须继续纳入重放测试。旧 v1 不具备完整参数，不冒充可重放 v2。

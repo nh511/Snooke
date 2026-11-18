@@ -29,3 +29,7 @@ execute_process(COMMAND "${NODE}" "${SOURCE}/tests/simulation-export.cjs" "${out
 if(NOT export_code EQUAL 0)
     message(FATAL_ERROR "JSON/CSV verification failed: ${export_log}; ${export_error}")
 endif()
+execute_process(COMMAND "${REPLAY}" "${out}/record.shot" RESULT_VARIABLE replay_code OUTPUT_VARIABLE replay_log ERROR_VARIABLE replay_error)
+if(NOT replay_code EQUAL 0)
+    message(FATAL_ERROR "22-ball physical replay failed: ${replay_log}; ${replay_error}")
+endif()
