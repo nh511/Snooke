@@ -32,11 +32,14 @@ struct TableGeometry
     std::vector<PocketGeometry> Pockets;
     std::vector<CushionProfile> CushionMaterials;
     std::vector<PocketProfile> PocketMaterials;
+    // Ordered XY contour, including virtual mouth edges for inside/outside checks.
+    std::vector<Vec3d> ClosedBoundary;
 };
 struct GeometrySettings
 {
     Meters CoordinateTolerance=1e-8;
     std::uint32_t JawSubdivisions=12;
+    bool RequireClosedBoundary=false;
 };
 // Table-v1 supports straight rails on axis-aligned cloth edges, with +Z up.
 // Output is replaced only after complete validation. Inputs are not mutated.

@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <locale>
 #include <sstream>
+#include <algorithm>
 
 namespace Snooker
 {
@@ -132,6 +133,18 @@ bool CheckPhysicsSafety(const PhysicsSnapshot& Candidate,const TableGeometry& Ge
     if(!Candidate.IsValid(&validationError)) {
         return fail(PhysicsFaultCode::SolverError,0,validationError.c_str());
     }
+    const auto inside=[&](const Vec3d& point) {
+        const auto& poly=Geometry.ClosedBoundary;bool result=false;
+        for(std::size_t i=0,j=poly.size()-1;i<poly.size();j=i++) {
+            const auto a=poly[j],b=poly[i];const auto d=b-a;const auto length=d.LengthSquared();
+            if(length>0) {
+                const auto t=std::clamp((point-a).Dot(d)/length,0.0,1.0);
+                Vec3d delta=point-(a+d*t);delta.Z=0;if(delta.Length()<1e-8)return true;
+            }
+            if((a.Y>point.Y)!=(b.Y>point.Y) && point.X<(b.X-a.X)*(point.Y-a.Y)/(b.Y-a.Y)+a.X)result=!result;
+        }
+        return result;
+    };
     for(std::size_t i=0;i<Candidate.Balls.size();++i) {
         const auto& Ball=Candidate.Balls[i];
         if(!FiniteBall(Ball))return fail(PhysicsFaultCode::NonFinite,Ball.Id,"nonfinite ball state");
@@ -152,8 +165,9 @@ bool CheckPhysicsSafety(const PhysicsSnapshot& Candidate,const TableGeometry& Ge
         if((pocket.State==PocketState::OnCloth || pocket.State==PocketState::Ejected) && penetration>Limits.MaxPenetrationMeters)
             return fail(PhysicsFaultCode::Penetration,Ball.Id,"ball penetrated cloth support");
         if((pocket.State==PocketState::OnCloth || pocket.State==PocketState::Ejected) && Geometry.Cloth.IsValid() &&
-           (Ball.PositionMeters.X<Geometry.Cloth.Min.X || Ball.PositionMeters.X>Geometry.Cloth.Max.X ||
-            Ball.PositionMeters.Y<Geometry.Cloth.Min.Y || Ball.PositionMeters.Y>Geometry.Cloth.Max.Y))
+           (Geometry.ClosedBoundary.empty()?
+             (Ball.PositionMeters.X<Geometry.Cloth.Min.X || Ball.PositionMeters.X>Geometry.Cloth.Max.X ||
+              Ball.PositionMeters.Y<Geometry.Cloth.Min.Y || Ball.PositionMeters.Y>Geometry.Cloth.Max.Y):!inside(Ball.PositionMeters)))
             return fail(PhysicsFaultCode::LeftTable,Ball.Id,"ball left playable cloth bounds");
         for(std::size_t j=0;j<i;++j) {
             if(!Candidate.PocketStates.empty() && Candidate.PocketStates[j].State==PocketState::Potted)continue;

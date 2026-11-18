@@ -6,6 +6,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(PhysicsCore STATIC
     PhysicsCore/src/Physics/PocketSimulation.cpp
     PhysicsCore/src/Physics/PhysicsFault.cpp
+    PhysicsCore/src/Physics/PhysicsService.cpp
     PhysicsCore/src/Physics/PocketContact.cpp
     PhysicsCore/src/Physics/PocketState.cpp
     PhysicsCore/src/Table/TableGeometry.cpp
@@ -40,6 +41,9 @@ target_link_libraries(RulesCore PUBLIC PhysicsCore)
 add_custom_target(Tools DEPENDS snooker_core_info snooker_validation snooker_single_ball snooker_cue_strike)
 add_executable(snooker_pocket_bundle tools/pocket_bundle.cpp)
 add_executable(snooker_fault_replay tools/fault_replay.cpp)
+add_executable(snooker_simulate tools/simulate.cpp)
+target_link_libraries(snooker_simulate PRIVATE PhysicsCore)
+add_dependencies(Tools snooker_simulate)
 target_link_libraries(snooker_fault_replay PRIVATE PhysicsCore)
 add_dependencies(Tools snooker_fault_replay)
 target_link_libraries(snooker_pocket_bundle PRIVATE PhysicsCore)
@@ -47,6 +51,15 @@ add_dependencies(Tools snooker_pocket_bundle)
 add_executable(snooker_core_info tools/core_info.cpp)
 target_link_libraries(snooker_core_info PRIVATE PhysicsCore RulesCore)
 enable_testing()
+add_executable(snooker_test_physics_service tests/physics_service.cpp)
+target_link_libraries(snooker_test_physics_service PRIVATE PhysicsCore)
+add_test(NAME core_physics_service COMMAND snooker_test_physics_service "${CMAKE_CURRENT_SOURCE_DIR}/data/bundles/six-pocket-engineering.bundle")
+set_tests_properties(core_physics_service PROPERTIES TIMEOUT 120)
+set_tests_properties(core_physics_service PROPERTIES FIXTURES_SETUP service_files TIMEOUT 240)
+add_test(NAME physics_service_cli COMMAND "${CMAKE_COMMAND}"
+    "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}"
+    "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DCONFIG=$<CONFIG>" -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/service_cli.cmake")
+set_tests_properties(physics_service_cli PROPERTIES FIXTURES_REQUIRED service_files TIMEOUT 240)
 add_executable(snooker_test_pocket_simulation tests/pocket_simulation.cpp)
 target_link_libraries(snooker_test_pocket_simulation PRIVATE PhysicsCore)
 add_test(NAME core_pocket_simulation COMMAND snooker_test_pocket_simulation
@@ -79,6 +92,7 @@ endforeach()
 add_custom_target(Tests DEPENDS snooker_test_main snooker_test_units snooker_test_log snooker_test_math snooker_test_rules snooker_test_parsing)
 add_dependencies(Tests snooker_test_pocket_simulation)
 add_dependencies(Tests snooker_test_physics_fault snooker_fault_replay)
+add_dependencies(Tests snooker_test_physics_service)
 add_test(NAME UnitsFailureExit COMMAND snooker_test_units --expect-centimeters 99)
 set_tests_properties(UnitsFailureExit PROPERTIES WILL_FAIL TRUE)
 add_test(NAME tools_core_info COMMAND snooker_core_info)

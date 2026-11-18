@@ -27,6 +27,7 @@ int main(int argc,char** argv)
            !BallCollisionProfile::Deserialize(Read(argv[5]),config.BallCollision,&error) ||
            !CueProfile::Deserialize(Read(argv[6]),config.Cue,&error))throw std::runtime_error(error);
         config.Version=config.Table.ParameterVersion;config.Cushions={cushion};config.Pockets={pocket};config.Cloth=cloth;
+        config.Geometry.RequireClosedBoundary=true;
         if(!config.IsValid(&error))throw std::runtime_error(error);
         std::ofstream file(argv[7]);if(!file || !(file<<config.Serialize()))throw std::runtime_error("cannot write bundle");
         file.flush();if(!file)throw std::runtime_error("bundle flush failed");

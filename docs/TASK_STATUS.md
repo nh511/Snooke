@@ -49,7 +49,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | PHY-018 | DONE | Pocket geometry, six-pocket engineering bundle, snapshot v3/v2 migration, single-ball pocket descent/recovery service and deterministic mid-pocket restore passed; multi-ball/full-table scheduling remains PHY-021 |
 | PHY-019 | DONE | Pocket state transitions, once-only pot event, potted no-eject and explicit recovery event passed |
 | PHY-020 | DONE | Eight fault codes, checkpoint/diagnostic separation, per-step event budget, frozen failed step and independent speed/timeout/event-loop fault-file replay passed; Debug/Release 54/54 |
-| PHY-021 | IN_PROGRESS | Implementing unified service and chronological ball/rail/pocket scheduling; closed geometry and complete-shot acceptance pending |
+| PHY-021 | DONE | Unified service/CLI, closed six-pocket boundary, multi-contact scheduling, 22-ball opening/training pot and mid-shot continuation passed; clean-copy Debug/Release 56/56 |
 
 ## Execution Rules
 
@@ -291,3 +291,15 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 故障格式升级 snooker-fault-v2，仍可读取 v1。有效故障前检查点、原始坏状态诊断、嵌入参数包分开保存；不再把修补坏值后的状态称作可复现输入。无有效输入的 NaN/Inf 拒绝只提供诊断，不承诺通过文本重新注入 NaN。
 - snooker_fault_replay 分别从 physics-fault.txt、physics-timeout.txt、physics-eventloop.txt 独立进程读取并重算，同一故障码、步号和完整故障记录逐字节相同。自动测试通过，不依赖 UE。
 - 本任务不等于 REL-004 的完整故障包收集系统，也不等于 PHY-021 的多球调度验收。证据保留于 build-evidence/phy020-resume-a3/。
+
+### PHY-021 实现和验收（2026-11-18）
+
+- 新增 ISnookerPhysicsService/CreatePhysicsService 和 snooker_simulate；BeginShot、Step、IsSettled、GetEvents、SaveSnapshot、RestoreSnapshot 可完成独立整杆计算。球对、库边、袋角、越口和袋内事件按最早时刻重建查询，状态按 ID 规范化；稳定事件游标跟随快照。
+- 修正六袋工程桌为 6 条库边；参数包 v2 增加 RequireClosedBoundary。生成器连接真实库端与袋角外端，以虚拟袋口边做拓扑检查，拒绝断开、多回路、自交轮廓；虚拟袋口边不参与碰撞。服务拒绝未开启闭合验证的参数包。
+- 台面采用不跳球模型：碰球/碰库产生的竖直速度由支撑吸收；库面和袋角按二维有限墙做 CCD，袋内仍为有限三维接触和分步重力。不是精确加速度 CCD，不是实测校准。
+- phy021-a0 发现碰球切向冲量产生下向速度；a1 补台面约束后双配置 55/55。a2 加闭环、事件序列/FPS 对比通过；a3 的 CLI 比较发现 22 个 CR 字节差异，归因 Windows 文本模式，改二进制 LF 后 phy021-final 双配置 56/56。phy021-pot 又补真实 22 球训练局面的碰球→进袋→球停，双配置 56/56。
+- 22 球开局中途恢复的后续事件及终态逐字节相同；30/60/120/144 FPS 事件和终态相同。高速 3 球连续碰撞同一步正确排序；带旋转两库、袋内捕获、失败输入状态不变和终局去重通过。独立进程 CLI 与 API 终态逐字节比较通过。
+- 跳过完全无相对平移的球对及零平移球的墙/袋口查询；移动球撞静止球仍检测。Debug 核心服务测试由约 231 s 降到约 29 s，CLI 约 14 s；未改变物理阈值。
+- 完整 record.shot/JSON/CSV 属 REP-001/VAL-003，当前简版 events.txt 不能替代完整单杆记录。
+- 阶段 1 干净副本验证：Verify-Standalone.ps1 -Run stage1-n18，configure/Debug build/Debug test/Release build/Release test 全部 exit 0，双配置各 56/56，无跳过；本地最终 phy021-pot 亦双配置 56/56。Debug/Release 开局 final.snapshot 和 events.txt 的 SHA-256 分别一致。
+- 当前 DONE=32/121、REVIEW=11、BLOCKED=2（UE）、TODO=76。阶段 1 已完成，准备提交并按授权推送；尚无 UE 安装/编译或实测校准结论。

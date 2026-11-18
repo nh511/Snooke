@@ -25,6 +25,65 @@ Vec3d RotateZ(const Vec3d& v,double angle)
     return {v.X*std::cos(angle)-v.Y*std::sin(angle),v.X*std::sin(angle)+v.Y*std::cos(angle),v.Z};
 }
 bool Finite(const Vec3d& v) {return v.IsFinite();}
+bool CloseBoundary(TableGeometry& g,Meters tolerance,std::string* Error)
+{
+    struct Edge {Vec3d A,B;};std::vector<Edge> edges;
+    const auto flat=[](Vec3d p){p.Z=0;return p;};
+    for(const auto& s:g.Segments)if(s.Feature!=TableFeature::ClothBoundary && s.Feature!=TableFeature::CushionTop)
+        edges.push_back({flat(s.Start),flat(s.End)});
+    for(const auto& p:g.Pockets)edges.push_back({p.MouthStart,p.MouthEnd});
+    if(edges.empty() || edges.size()>10000)return Fail(Error,"closed boundary edge limit");
+    struct End {Vec3d Point;std::uint32_t Pocket=0;std::string Id,Version;bool Used=false;};
+    std::vector<End> ends;
+    for(const auto& edge:edges)for(const auto& point:{edge.A,edge.B}) {
+        unsigned degree=0;
+        for(const auto& other:edges){degree+=point.NearlyEquals(other.A,tolerance);degree+=point.NearlyEquals(other.B,tolerance);}
+        if(degree==1) {
+            End end;end.Point=point;
+            for(const auto& p:g.Pockets)if(point.NearlyEquals(flat(p.LeftJaw.back()),tolerance) || point.NearlyEquals(flat(p.RightJaw.back()),tolerance)) {
+                end.Pocket=p.Definition.Id;end.Id=p.Parameters.Id;end.Version=p.Parameters.ParameterVersion;
+            }
+            ends.push_back(end);
+        } else if(degree!=2)return Fail(Error,"non-manifold table contour");
+    }
+    // Connect each physical rail end to a distinct outer jaw end. Reject long
+    // invented walls: missing rails cannot be silently closed across the table.
+    for(;;) {
+        double best=0.3;std::size_t a=ends.size(),b=ends.size();
+        for(std::size_t i=0;i<ends.size();++i)if(!ends[i].Used && !ends[i].Pocket)
+            for(std::size_t j=0;j<ends.size();++j)if(!ends[j].Used && ends[j].Pocket) {
+                const double distance=(ends[i].Point-ends[j].Point).Length();
+                if(distance<best){best=distance;a=i;b=j;}
+            }
+        if(a==ends.size())break;
+        const auto& jaw=ends[b];
+        g.Segments.push_back({TableFeature::PocketJaw,jaw.Pocket,ends[a].Point,jaw.Point,{},jaw.Id,jaw.Version});
+        edges.push_back({ends[a].Point,jaw.Point});ends[a].Used=ends[b].Used=true;
+    }
+    for(const auto& end:ends)if(!end.Used)return Fail(Error,"unmatched table contour endpoint");
+    std::vector<bool> used(edges.size(),false);auto point=edges[0].A;const auto origin=point;
+    for(std::size_t n=0;n<edges.size();++n) {
+        g.ClosedBoundary.push_back(point);bool found=false;
+        for(std::size_t i=0;i<edges.size();++i)if(!used[i]) {
+            if(point.NearlyEquals(edges[i].A,tolerance)){point=edges[i].B;used[i]=true;found=true;break;}
+            if(point.NearlyEquals(edges[i].B,tolerance)){point=edges[i].A;used[i]=true;found=true;break;}
+        }
+        if(!found || (n+1<edges.size() && point.NearlyEquals(origin,tolerance)))return Fail(Error,"disconnected table boundary");
+    }
+    if(!point.NearlyEquals(origin,tolerance))return Fail(Error,"table boundary does not close");
+    const auto cross=[](const Vec3d& a,const Vec3d& b){return a.X*b.Y-a.Y*b.X;};
+    const auto& poly=g.ClosedBoundary;
+    for(std::size_t i=0;i<poly.size();++i)for(std::size_t j=i+2;j<poly.size();++j) {
+        if(i==0 && j+1==poly.size())continue;
+        const auto a=poly[i],b=poly[(i+1)%poly.size()],c=poly[j],d=poly[(j+1)%poly.size()];
+        const auto ab=b-a,cd=d-c;const double denominator=cross(ab,cd);
+        if(std::abs(denominator)<=1e-14)continue;
+        const double t=cross(c-a,cd)/denominator,u=cross(c-a,ab)/denominator;
+        if(t>=-tolerance && t<=1+tolerance && u>=-tolerance && u<=1+tolerance)
+            return Fail(Error,"self-intersecting closed table boundary");
+    }
+    return true;
+}
 }
 bool GenerateTableGeometry(const TableDefinition& Table,const std::vector<CushionProfile>& Cushions,
     const std::vector<PocketProfile>& Pockets,const GeometrySettings& Settings,TableGeometry& Output,std::string* Error)
@@ -124,6 +183,7 @@ bool GenerateTableGeometry(const TableDefinition& Table,const std::vector<Cushio
         for(const auto& v:p.Floor)if(!Finite(v))return Fail(Error,"pocket floor overflow");
         for(const auto& v:p.Bottom)if(!Finite(v))return Fail(Error,"pocket bottom overflow");
     }
+    if(Settings.RequireClosedBoundary && !CloseBoundary(g,Settings.CoordinateTolerance,Error))return false;
     Output=std::move(g);return true;
 }
 }

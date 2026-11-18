@@ -35,8 +35,8 @@ bool PocketSimulationConfig::IsValid(std::string* Error) const
 }
 std::string PocketSimulationConfig::Serialize() const
 {
-    auto s=Writer();s<<"snooker-physics-bundle-v1 "<<Version<<' '<<FixedStep<<' '<<Gravity<<' '<<Substeps
-       <<' '<<Geometry.CoordinateTolerance<<' '<<Geometry.JawSubdivisions
+    auto s=Writer();s<<"snooker-physics-bundle-v2 "<<Version<<' '<<FixedStep<<' '<<Gravity<<' '<<Substeps
+       <<' '<<Geometry.CoordinateTolerance<<' '<<Geometry.JawSubdivisions<<' '<<unsigned(Geometry.RequireClosedBoundary)
        <<"\ncloth "<<Cloth.ParameterVersion<<' '<<Cloth.Condition<<' '<<Cloth.Sliding<<' '<<Cloth.Rolling<<' '
        <<Cloth.Spin<<' '<<Cloth.SleepLinearSpeed<<' '<<Cloth.SleepAngularSpeed<<' '<<Cloth.SleepPositionTolerance<<' '<<Cloth.SleepDuration
        <<"\ntable "<<std::quoted(Table.Serialize())<<"\ncushions "<<Cushions.size();
@@ -50,9 +50,12 @@ bool PocketSimulationConfig::Deserialize(const std::string& Text,PocketSimulatio
 {
     if(Text.size()>16*1024*1024)return Fail(Error,"pocket config exceeds 16 MiB");
     std::istringstream s(Text);s.imbue(std::locale::classic());PocketSimulationConfig c;std::string blob;
-    if(!Tag(s,"snooker-physics-bundle-v1") || !(s>>c.Version>>c.FixedStep>>c.Gravity) ||
+    std::string magic;unsigned closed=0;
+    if(!(s>>magic) || (magic!="snooker-physics-bundle-v1" && magic!="snooker-physics-bundle-v2") || !(s>>c.Version>>c.FixedStep>>c.Gravity) ||
        !ReadUnsigned(s,c.Substeps) || !(s>>c.Geometry.CoordinateTolerance) || !ReadUnsigned(s,c.Geometry.JawSubdivisions) ||
-       !Tag(s,"cloth") || !(s>>c.Cloth.ParameterVersion>>c.Cloth.Condition>>c.Cloth.Sliding>>c.Cloth.Rolling>>c.Cloth.Spin
+       (magic=="snooker-physics-bundle-v2" && (!ReadUnsigned(s,closed) || closed>1)))return Fail(Error,"invalid bundle header");
+    c.Geometry.RequireClosedBoundary=closed!=0;
+    if(!Tag(s,"cloth") || !(s>>c.Cloth.ParameterVersion>>c.Cloth.Condition>>c.Cloth.Sliding>>c.Cloth.Rolling>>c.Cloth.Spin
           >>c.Cloth.SleepLinearSpeed>>c.Cloth.SleepAngularSpeed>>c.Cloth.SleepPositionTolerance>>c.Cloth.SleepDuration) ||
        !Tag(s,"table") || !(s>>std::quoted(blob)) || !TableDefinition::Deserialize(blob,c.Table,Error))
         return Fail(Error,"invalid pocket config header/table");
