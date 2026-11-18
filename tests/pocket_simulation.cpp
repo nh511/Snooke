@@ -65,7 +65,7 @@ int main(int argc,char** argv)
     CHECK(PhysicsSnapshot::Deserialize("2 BeforeShot snooker-physics-bundle-v1 0 0 0.004166666666666667 0 1\n"+clothBall.Serialize(),legacy,&error));
     CHECK(legacy.SchemaVersion==3 && legacy.PocketStates[0].State==PocketState::OnCloth && legacy.EventCount==0);
     // Actual jaw endpoint, horizontal travel just above cloth: rebound cannot pot.
-    ball.PositionMeters=p.MouthStart+p.Tangent*(-0.08)+Vec3d{0,0,0.005};
+    ball.PositionMeters=p.MouthStart+p.Tangent*(-0.08)+Vec3d{0,0,ball.RadiusMeters};
     ball.LinearVelocityMetersPerSecond=p.Tangent*2;
     auto jaw=PhysicsSnapshot::Capture(clock,{ball},config.Version,ESnapshotPhase::DuringStep);
     jaw.PocketStates={{PocketState::AtMouth,p.Definition.Id,false}};

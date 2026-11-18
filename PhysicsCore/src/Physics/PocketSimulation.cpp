@@ -2,6 +2,7 @@
 #include <Snooker/Physics/ClothFriction.h>
 #include <Snooker/Physics/Sleep.h>
 #include <Snooker/Serialization/Text.h>
+#include <fstream>
 #include <algorithm>
 #include <iomanip>
 #include <set>
@@ -28,6 +29,7 @@ bool PocketSimulationConfig::IsValid(std::string* Error) const
     if(!Token(Version) || !IsFinite(FixedStep) || FixedStep<1e-6 || FixedStep>0.1 ||
        !IsFinite(Gravity) || Gravity<=0 || Gravity>100 || Substeps<1 || Substeps>128 ||
        !Cloth.IsValid(Error) || !BallCollision.IsValid(Error) || !Cue.IsValid(Error))return Fail(Error,"invalid pocket simulation parameters");
+    if(!Safety.IsValid(Error))return false;
     TableGeometry g;
     return GenerateTableGeometry(Table,Cushions,Pockets,Geometry,g,Error);
 }
@@ -42,7 +44,7 @@ std::string PocketSimulationConfig::Serialize() const
     s<<"\npockets "<<Pockets.size();for(const auto& p:Pockets)s<<' '<<std::quoted(p.Serialize());
     s<<"\nball-contact "<<std::quoted(BallCollision.Serialize())
      <<"\ncue "<<std::quoted(Cue.Serialize());
-    s<<"\nend";return s.str();
+    s<<"\nsafety "<<std::quoted(Safety.Serialize())<<"\nend";return s.str();
 }
 bool PocketSimulationConfig::Deserialize(const std::string& Text,PocketSimulationConfig& Output,std::string* Error)
 {
@@ -67,6 +69,7 @@ bool PocketSimulationConfig::Deserialize(const std::string& Text,PocketSimulatio
     }
     if(!Tag(s,"ball-contact") || !(s>>std::quoted(blob)) || !BallCollisionProfile::Deserialize(blob,c.BallCollision,Error) ||
        !Tag(s,"cue") || !(s>>std::quoted(blob)) || !CueProfile::Deserialize(blob,c.Cue,Error) ||
+       !Tag(s,"safety") || !(s>>std::quoted(blob)) || !PhysicsSafetyLimits::Deserialize(blob,c.Safety,Error) ||
        !Tag(s,"end") || !(s>>std::ws).eof() || !c.IsValid(Error))return Fail(Error,"invalid pocket config tail/values");
     Output=std::move(c);return true;
 }
@@ -96,12 +99,23 @@ bool PocketSimulation::Restore(const PocketSimulationConfig& c,const PhysicsSnap
 bool PocketSimulation::Step(std::string* Error)
 {
     if(!Ready)return Fail(Error,"pocket service not initialized");
-    auto next=*this;if(!next.StepInternal(Error))return false;
+    if(IsFaulted())return Fail(Error,"pocket service is faulted");
+    auto next=*this;if(!next.StepInternal(Error)) {
+        if(next.IsFaulted())Fault=next.Fault;
+        return false;
+    }
     *this=std::move(next);return true;
 }
 bool PocketSimulation::StepInternal(std::string* Error)
 {
     if(State.StepIndex==std::numeric_limits<std::uint64_t>::max())return Fail(Error,"step counter overflow");
+    auto fault=[&](const std::string& message) {
+        PhysicsFault detected;const auto code=message.find("timeout")!=std::string::npos?PhysicsFaultCode::Timeout:
+          message.find("event")!=std::string::npos?PhysicsFaultCode::EventLoop:PhysicsFaultCode::SolverError;
+        CheckPhysicsSafety(State,Geometry,Config.Safety,Events.size(),detected,nullptr);
+        if(detected.Code==PhysicsFaultCode::None) {detected.Code=code;detected.Step=State.StepIndex;detected.Time=State.SimulationTimeSeconds;detected.Message=message;detected.Snapshot=State;}
+        Fault=detected;if(Error)*Error=message;return false;
+    };
     auto& ball=State.Balls[0];auto& pocketState=State.PocketStates[0];
     const auto previous=ball.PositionMeters;
     auto emit=[&](PocketSimulationEventKind kind,const PocketGeometry& p,Seconds t,const PocketContact* contact) {
@@ -178,6 +192,14 @@ bool PocketSimulation::StepInternal(std::string* Error)
        !UpdateSleep(ball,previous,Config.Cloth,Config.FixedStep,Error))return false;
     ++State.StepIndex;State.SimulationTimeSeconds=State.StepIndex*State.FixedStepSeconds;
     State.Phase=ESnapshotPhase::DuringStep;
-    return State.IsValid(Error);
+    PhysicsFault detected;
+    if(!CheckPhysicsSafety(State,Geometry,Config.Safety,Events.size(),detected,Error)) {Fault=detected;return false;}
+    return true;
+}
+bool PocketSimulation::SaveFault(const std::string& Path,std::string* Error) const
+{
+    if(!IsFaulted())return Fail(Error,"no physics fault is available");
+    std::ofstream File(Path);if(!File || !(File<<Fault.Serialize()))return Fail(Error,"cannot write physics fault");
+    File.flush();if(!File)return Fail(Error,"physics fault flush failed");return true;
 }
 }

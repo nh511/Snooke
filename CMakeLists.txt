@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(PhysicsCore STATIC
     PhysicsCore/src/Physics/PocketSimulation.cpp
+    PhysicsCore/src/Physics/PhysicsFault.cpp
     PhysicsCore/src/Physics/PocketContact.cpp
     PhysicsCore/src/Physics/PocketState.cpp
     PhysicsCore/src/Table/TableGeometry.cpp
@@ -51,6 +52,13 @@ add_test(NAME core_pocket_simulation COMMAND snooker_test_pocket_simulation
     "${CMAKE_CURRENT_SOURCE_DIR}/data/profiles/pocket-standard.txt"
     "${CMAKE_CURRENT_SOURCE_DIR}/data/profiles/cloth-standard.txt")
 set_tests_properties(core_pocket_simulation PROPERTIES TIMEOUT 30)
+add_executable(snooker_test_physics_fault tests/physics_fault.cpp)
+target_link_libraries(snooker_test_physics_fault PRIVATE PhysicsCore)
+add_test(NAME core_physics_fault COMMAND snooker_test_physics_fault
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/table-standard.snooker"
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/profiles/cushion-standard.txt"
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/profiles/pocket-standard.txt")
+set_tests_properties(core_physics_fault PROPERTIES TIMEOUT 30)
 foreach(case IN ITEMS main units log math rules parsing definition state clock snapshot cloth friction rolling angular motion sleep)
     add_executable(snooker_test_${case} tests/${case}.cpp)
     target_link_libraries(snooker_test_${case} PRIVATE PhysicsCore RulesCore)

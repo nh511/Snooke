@@ -48,6 +48,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-004 | DONE | Red, color-after-red, final-color cursor and finished Ball On queries passed; FreeBall explicitly unsupported |
 | PHY-018 | DONE | Pocket geometry, six-pocket engineering bundle, snapshot v3/v2 migration, single-ball pocket descent/recovery service and deterministic mid-pocket restore passed; multi-ball/full-table scheduling remains PHY-021 |
 | PHY-019 | DONE | Pocket state transitions, once-only pot event, potted no-eject and explicit recovery event passed |
+| PHY-020 | BLOCKED | Added fault codes, safety limits, fault serialization and service fault freeze; final full regression is blocked by the existing PHY-018 jaw fixture assertion after four failed validation attempts |
 
 ## Execution Rules
 
@@ -87,6 +88,11 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - COR-002: oversized patch failed to start; retry 1 with per-file patches succeeded.
 - Parser repair: first patch had out-of-order status context and was rejected before changes; retry 1 split into small patches.
 - Parser tests: first Debug run found a literal decimal expectation incompatible with max_digits10 formatting. Retry 1 uses exactly representable 1.5 and still checks invariant decimal point and full snapshot round trip.
+
+- PHY-020 run `phy020-a0`: initial Debug/Release attempt exposed three issues: invalid fault records for malformed snapshots, fault state lost through transactional service copy, and the PHY-018 jaw fixture violating the new cloth safety check.
+- PHY-020 retry 1 `phy020-a1`: compile failure because `PhysicsFault.cpp` omitted `<set>`; corrected, but the full run still found the same jaw fixture compatibility issue.
+- PHY-020 retry 2 `phy020-a2`: fault-specific tests passed and bundle regeneration passed; only the PHY-018 jaw assertion remained because the test expected a negative tangent velocity that the configured jaw geometry did not produce.
+- PHY-020 retry 3 `phy020-a3`: narrowed `LeftTable` to `OnCloth/Ejected` states; all fault tests and other regressions passed, but the jaw assertion still failed. Per execution rules, PHY-020 is now BLOCKED after the initial failure plus three retries. Do not start PHY-021 until the jaw fixture/response contract is corrected and a fresh Debug/Release run passes.
 
 ## Evidence (2026-11-10)
 

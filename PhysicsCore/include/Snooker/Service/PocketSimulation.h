@@ -3,6 +3,7 @@
 #include <Snooker/Data/ClothProfile.h>
 #include <Snooker/Physics/BallResponse.h>
 #include <Snooker/Shot/CueProfile.h>
+#include <Snooker/Physics/PhysicsFault.h>
 
 namespace Snooker
 {
@@ -20,6 +21,7 @@ struct PocketSimulationConfig
     Seconds FixedStep=1.0/240;
     Scalar Gravity=9.80665;
     std::uint32_t Substeps=8;
+    PhysicsSafetyLimits Safety;
     bool IsValid(std::string* Error=nullptr) const;
     std::string Serialize() const;
     static bool Deserialize(const std::string& Text,PocketSimulationConfig& Output,std::string* Error=nullptr);
@@ -45,12 +47,16 @@ public:
     bool Step(std::string* Error=nullptr);
     const PhysicsSnapshot& SaveSnapshot() const { return State; }
     const std::vector<PocketSimulationEvent>& GetEvents() const { return Events; }
+    bool IsFaulted() const { return Fault.Code!=PhysicsFaultCode::None; }
+    const PhysicsFault& GetFault() const { return Fault; }
+    bool SaveFault(const std::string& Path,std::string* Error=nullptr) const;
 private:
     bool StepInternal(std::string* Error);
     PocketSimulationConfig Config;
     TableGeometry Geometry;
     PhysicsSnapshot State;
     std::vector<PocketSimulationEvent> Events;
+    PhysicsFault Fault;
     bool Ready=false;
 };
 }
