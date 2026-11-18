@@ -44,6 +44,9 @@ add_custom_target(Tools DEPENDS snooker_core_info snooker_validation snooker_sin
 add_executable(snooker_pocket_bundle tools/pocket_bundle.cpp)
 add_executable(snooker_fault_replay tools/fault_replay.cpp)
 add_executable(snooker_simulate tools/simulate.cpp)
+add_executable(snooker_baseline_seed tools/baseline_seed.cpp)
+target_link_libraries(snooker_baseline_seed PRIVATE PhysicsCore)
+add_dependencies(Tools snooker_baseline_seed)
 target_link_libraries(snooker_simulate PRIVATE PhysicsCore)
 add_dependencies(Tools snooker_simulate)
 target_link_libraries(snooker_fault_replay PRIVATE PhysicsCore)
@@ -66,6 +69,11 @@ add_test(NAME physics_service_cli COMMAND "${CMAKE_COMMAND}"
     "-DNODE=${NODE_EXECUTABLE}"
     "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DCONFIG=$<CONFIG>" -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/service_cli.cmake")
 set_tests_properties(physics_service_cli PROPERTIES FIXTURES_REQUIRED service_files TIMEOUT 240)
+add_test(NAME baseline_center COMMAND "${CMAKE_COMMAND}"
+    "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DNODE=${NODE_EXECUTABLE}"
+    "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/baseline.cmake")
+set_tests_properties(baseline_center PROPERTIES TIMEOUT 60)
 add_executable(snooker_test_pocket_simulation tests/pocket_simulation.cpp)
 target_link_libraries(snooker_test_pocket_simulation PRIVATE PhysicsCore)
 add_test(NAME core_pocket_simulation COMMAND snooker_test_pocket_simulation

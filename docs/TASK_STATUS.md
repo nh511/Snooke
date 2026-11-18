@@ -52,7 +52,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | PHY-021 | DONE | Unified service/CLI, closed six-pocket boundary, multi-contact scheduling, 22-ball opening/training pot and mid-shot continuation passed; clean-copy Debug/Release 56/56 |
 | REP-001 | DONE | shot-v2 embeds bundle/input/initial/final/events; real 22-ball record file round trip and malformed/order/reference/version rejection passed Debug/Release 56/56 |
 | VAL-003 | DONE | Fixed-step multi-ball CSV and JSON snapshots/parameters/events/geometry independently parsed by Node; Debug/Release 56/56 |
-| VAL-004 | IN_PROGRESS | Building center-strike short-shot baseline and field-level first-divergence comparator |
+| VAL-004 | DONE | Center-strike 476-row short baseline, explicit speed perturbation and first differing step/ball/field report passed Debug/Release 57/57 |
+| VAL-009 | IN_PROGRESS | Extending exact/tolerant deterministic comparison to events, final state and cross-configuration outputs |
 
 ## Execution Rules
 
@@ -318,3 +319,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - snooker_simulate 生成 record.shot、trajectory.csv、result.json、viewer.json、events.txt 和 final.snapshot。CSV 每固定步采样所有球，JSON 内嵌参数包、初终完整快照、输入、事件、库边和袋口几何。
 - Test-Current.ps1 -Run val003-a1，双配置 56/56；Node 独立 JSON.parse/CSV 解析器检查行数、步号、ID、时间、事件各字段、终态和快照一致。22 球开局得到 233244 行、13 事件；完整轨迹约 23.5 MB，仅在 build 下，不提交为基线。
 - 配置阶段必须找到 node，否则失败，不跳过导出验收。输出目录必须为空，错误运行不覆盖上一轮成功结果。val003-a0 是补丁传递失败后的旧版回归，不作为本任务验收；未删历史证据。短杆基线限制为每文件小于 1 MiB。
+
+### VAL-004 验收（2026-11-18）
+
+- 新建 data/baselines/center，真实 Release 中杆输入 0.2 m/s：475 步/1.9791666666666667 s 后静止，476 行 CSV、3 事件，终点 x=0.14873083962918993 m，CSV 57685 字节。参数包与输入/快照/完整记录一并关联，不是实测值。
+- tools/compare.cjs 按步序逐字段比较，连续浮点容差可选，离散字段精确比较；首次偏差报告 step、ball、field、expected、actual。baseline_center 重算基线要求 1e-9 内一致，另将杆速增加 1e-6，要求 FAIL 且给出第一处差异。
+- Test-Current.ps1 -Run val004-a0，Debug/Release 57/57，全部 exit 0。新建基线原因：统一服务首次中杆短程回归；后续更新必须说明原因，不用生成值替换失败期望。
