@@ -24,3 +24,8 @@ execute_process(COMMAND "${RECORD_TEST}" "${out}/record.shot" RESULT_VARIABLE re
 if(NOT record_code EQUAL 0)
     message(FATAL_ERROR "physics record validation failed: ${record_log}; ${record_error}")
 endif()
+execute_process(COMMAND "${NODE}" "${SOURCE}/tests/simulation-export.cjs" "${out}"
+    RESULT_VARIABLE export_code OUTPUT_VARIABLE export_log ERROR_VARIABLE export_error)
+if(NOT export_code EQUAL 0)
+    message(FATAL_ERROR "JSON/CSV verification failed: ${export_log}; ${export_error}")
+endif()

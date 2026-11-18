@@ -51,7 +51,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | PHY-020 | DONE | Eight fault codes, checkpoint/diagnostic separation, per-step event budget, frozen failed step and independent speed/timeout/event-loop fault-file replay passed; Debug/Release 54/54 |
 | PHY-021 | DONE | Unified service/CLI, closed six-pocket boundary, multi-contact scheduling, 22-ball opening/training pot and mid-shot continuation passed; clean-copy Debug/Release 56/56 |
 | REP-001 | DONE | shot-v2 embeds bundle/input/initial/final/events; real 22-ball record file round trip and malformed/order/reference/version rejection passed Debug/Release 56/56 |
-| VAL-003 | IN_PROGRESS | Adding fixed-step multi-ball CSV and JSON result/viewer export with independent Node validation |
+| VAL-003 | DONE | Fixed-step multi-ball CSV and JSON snapshots/parameters/events/geometry independently parsed by Node; Debug/Release 56/56 |
+| VAL-004 | IN_PROGRESS | Building center-strike short-shot baseline and field-level first-divergence comparator |
 
 ## Execution Rules
 
@@ -311,3 +312,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - PhysicsShotRecord/snooker-shot-v2 内嵌真实 PhysicsBundle v2、初始快照 v3、ShotInput、逐事件完整数据、终态和 Settled/fault 结果。旧 ShotRecord v1 保留，不静默升级成可回放记录。
 - snooker_simulate 写出 record.shot；独立 CLI 的真实 22 球记录逐字节往返，缺块、未知版本、乱序事件、球/库/袋引用、负冲量、球属性变化和游标不一致均拒绝，失败不改目标。属于格式验收，重新运行物理与结果比对仍属 REP-002。
 - Test-Current.ps1 -Run rep001-a0，Debug/Release 56/56（格式测试在 physics_service_cli 中调用），全部 exit 0。阶段 1 已推送 c073b11；阶段 2 按计划结束时推送。
+
+### VAL-003 验收（2026-11-18）
+
+- snooker_simulate 生成 record.shot、trajectory.csv、result.json、viewer.json、events.txt 和 final.snapshot。CSV 每固定步采样所有球，JSON 内嵌参数包、初终完整快照、输入、事件、库边和袋口几何。
+- Test-Current.ps1 -Run val003-a1，双配置 56/56；Node 独立 JSON.parse/CSV 解析器检查行数、步号、ID、时间、事件各字段、终态和快照一致。22 球开局得到 233244 行、13 事件；完整轨迹约 23.5 MB，仅在 build 下，不提交为基线。
+- 配置阶段必须找到 node，否则失败，不跳过导出验收。输出目录必须为空，错误运行不覆盖上一轮成功结果。val003-a0 是补丁传递失败后的旧版回归，不作为本任务验收；未删历史证据。短杆基线限制为每文件小于 1 MiB。

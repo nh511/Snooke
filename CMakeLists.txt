@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(Snooker LANGUAGES CXX)
+find_program(NODE_EXECUTABLE NAMES node REQUIRED)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -62,6 +63,7 @@ set_tests_properties(core_physics_service PROPERTIES FIXTURES_SETUP service_file
 add_test(NAME physics_service_cli COMMAND "${CMAKE_COMMAND}"
     "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}"
     "-DRECORD_TEST=$<TARGET_FILE:snooker_test_physics_record>"
+    "-DNODE=${NODE_EXECUTABLE}"
     "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DCONFIG=$<CONFIG>" -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/service_cli.cmake")
 set_tests_properties(physics_service_cli PROPERTIES FIXTURES_REQUIRED service_files TIMEOUT 240)
 add_executable(snooker_test_pocket_simulation tests/pocket_simulation.cpp)
