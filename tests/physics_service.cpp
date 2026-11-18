@@ -119,5 +119,15 @@ int main(int argc,char** argv)
     CHECK(service->IsSettled());pots=0;hits=0;
     for(const auto& e:service->GetEvents()){if(e.Kind==PhysicsEventKind::Potted)++pots;if(e.Kind==PhysicsEventKind::BallBall)++hits;}
     CHECK(hits>0);CHECK(pots>0);
+    // Regression: simultaneous pocket slope/edge contact must validate the
+    // selected primitive, not an unrelated earlier zero-time contact.
+    auto edge=PhysicsSnapshot::Capture(clock,{Ball(1,0)},bundle.Version,ESnapshotPhase::DuringStep);
+    edge.StepIndex=206;edge.SimulationTimeSeconds=edge.StepIndex*edge.FixedStepSeconds;
+    edge.AccumulatorSeconds=edge.FixedStepSeconds;edge.EventCount=328;
+    edge.Balls[0].PositionMeters={1.8277761973333491,0.99465565066040007,-0.010496598473838355};
+    edge.Balls[0].LinearVelocityMetersPerSecond={0.41961174467380724,0.79155284666649406,-0.31060659079021102};
+    edge.Balls[0].AngularVelocityRadiansPerSecond={-16.051418497761297,1.8822336599449034,-5.3547133615905249};
+    edge.Balls[0].Sleeping=false;edge.PocketStates={{PocketState::InPocket,6,false}};
+    CHECK(service->RestoreSnapshot(edge,&error));CHECK(service->Step(0,run,&error));CHECK(run!=PhysicsRunState::Faulted);
     std::cout<<"PASS unified service shot, FPS, high-speed multi-contact, rails, pocket and snapshot continuation\n";
 }

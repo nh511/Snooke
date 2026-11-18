@@ -28,6 +28,14 @@ int main(int argc,char** argv)
         shot.ForwardSpeedMetersPerSecond=0.4;shot.StrikePointOnBall={0,sign*0.2,0};
         shot.CueTipOffsetMeters=shot.StrikePointOnBall*ball.RadiusMeters;
     }
+    if(mode=="one-rail" || mode=="touching-rail") {
+        initial.Balls[0].PositionMeters={mode=="one-rail"?1.70:bundle.Table.Cloth.Max.X-ball.RadiusMeters,0.3,ball.RadiusMeters};
+        shot.ForwardSpeedMetersPerSecond=0.3;
+    }
+    if(mode=="two-rail") {
+        initial.Balls[0].PositionMeters={1.5,0.6,ball.RadiusMeters};
+        shot.CueDirection={1,0.6,0};shot.ForwardSpeedMetersPerSecond=0.9;
+    }
     auto changed=shot;changed.ForwardSpeedMetersPerSecond+=1e-6;
     std::ofstream a(out/"initial.snapshot",std::ios::binary),b(out/"center.input",std::ios::binary),c(out/"changed.input",std::ios::binary);
     a<<initial.Serialize();b<<shot.Serialize();c<<changed.Serialize();

@@ -38,6 +38,7 @@ int main(int argc,char** argv)
     CHECK(ReflectPocketContact(ball,p,contact,&error));CHECK(ball.LinearVelocityMetersPerSecond.Y>0);
     CHECK(BallKineticEnergy(ball)<=energy+1e-9);
     auto after=ball.Serialize();CHECK(ReflectPocketContact(ball,p,contact));CHECK(ball.Serialize()==after);
+    auto forged=contact;forged.Primitive=999999;CHECK(!ReflectPocketContact(ball,p,forged));CHECK(ball.Serialize()==after);
     ball.PositionMeters={-0.32,0,0.1};ball.LinearVelocityMetersPerSecond={0,0,-100};
     CHECK(FindPocketContact(ball,p,0.003,contact));CHECK(contact.Hit);CHECK(contact.Feature==PocketFeature::Bottom);
     CHECK(NearlyEqual(contact.Time,0.0019,1e-12));CHECK(contact.Normal.NearlyEquals({0,0,1}));

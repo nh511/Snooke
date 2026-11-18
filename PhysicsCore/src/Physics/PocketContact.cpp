@@ -58,9 +58,11 @@ struct Sweep
     Seconds Horizon;
     PocketContact Best;
     bool ApproachingOnly=false;
+    std::size_t OnlyPrimitive=0;
     std::size_t Primitive=0;
     void Offer(double u,const Vec3d& point,const Vec3d& fallback,PocketFeature feature)
     {
+        if(OnlyPrimitive && Primitive!=OnlyPrimitive)return;
         const Vec3d center=Ball.PositionMeters+Ball.LinearVelocityMetersPerSecond*(u*Horizon);
         const Vec3d offset=center-point;const double distance=Length(offset);
         const Vec3d normal=distance>1e-14?offset*(1/distance):fallback;
@@ -119,7 +121,7 @@ struct Sweep
 };
 }
 bool FindPocketContact(const BallState& Ball,const PocketGeometry& Pocket,Seconds Horizon,
-                       PocketContact& Output,std::string* Error,bool ApproachingOnly)
+                       PocketContact& Output,std::string* Error,bool ApproachingOnly,std::size_t OnlyPrimitive)
 {
     if(!Ball.IsValid(Error) || !Validate(Pocket,Error))return false;
     if(!IsFinite(Horizon) || Horizon<0 || !Safe(Ball.PositionMeters) || !Safe(Ball.LinearVelocityMetersPerSecond) ||
@@ -128,6 +130,7 @@ bool FindPocketContact(const BallState& Ball,const PocketGeometry& Pocket,Second
         return Fail(Error,"unsafe pocket sweep bounds or horizon");
     Sweep sweep{Ball,Pocket,Horizon,{}};
     sweep.ApproachingOnly=ApproachingOnly;
+    sweep.OnlyPrimitive=OnlyPrimitive;
     for(const auto* jaw:{&Pocket.LeftJaw,&Pocket.RightJaw})
         for(std::size_t i=1;i<jaw->size();++i)sweep.Segment((*jaw)[i-1],(*jaw)[i],PocketFeature::Jaw);
     // Mouth is an opening, not a solid segment across the bag. Only its side lips are solid.
@@ -152,7 +155,7 @@ bool ReflectPocketContact(BallState& Ball,const PocketGeometry& Pocket,const Poc
        !NearlyEqual(Length(Ball.PositionMeters-Contact.Point),Ball.RadiusMeters,1e-8))
         return Fail(Error,"invalid or penetrating pocket response contact");
     BallState probe=Ball;probe.RadiusMeters+=1e-8;
-    if(!FindPocketContact(probe,Pocket,0,actual,Error) || !actual.Hit ||
+    if(!Contact.Primitive || !FindPocketContact(probe,Pocket,0,actual,Error,false,Contact.Primitive) || !actual.Hit ||
        !actual.Point.NearlyEquals(Contact.Point,1e-7) || !actual.Normal.NearlyEquals(Contact.Normal,1e-6) ||
        actual.Feature!=Contact.Feature)return Fail(Error,"stale pocket response contact");
     const double speed=Ball.LinearVelocityMetersPerSecond.Dot(Contact.Normal);

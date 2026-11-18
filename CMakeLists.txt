@@ -60,6 +60,8 @@ add_dependencies(Tools snooker_pocket_bundle)
 add_executable(snooker_core_info tools/core_info.cpp)
 target_link_libraries(snooker_core_info PRIVATE PhysicsCore RulesCore)
 enable_testing()
+add_executable(snooker_test_rail_baseline tests/rail_baseline.cpp)
+target_link_libraries(snooker_test_rail_baseline PRIVATE PhysicsCore)
 add_executable(snooker_test_shot_replay tests/shot_replay.cpp)
 target_link_libraries(snooker_test_shot_replay PRIVATE PhysicsCore)
 add_test(NAME core_shot_replay COMMAND snooker_test_shot_replay "${CMAKE_CURRENT_SOURCE_DIR}/data/baselines/center/record.shot")
@@ -89,6 +91,13 @@ add_test(NAME baseline_side_spin COMMAND "${CMAKE_COMMAND}"
     "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/side-baseline.cmake")
 set_tests_properties(baseline_side_spin PROPERTIES TIMEOUT 90)
+foreach(mode IN ITEMS one-rail two-rail touching-rail left)
+    add_test(NAME rail_${mode} COMMAND "${CMAKE_COMMAND}"
+        "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DCHECK_RAIL=$<TARGET_FILE:snooker_test_rail_baseline>"
+        "-DNODE=${NODE_EXECUTABLE}" "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}"
+        "-DCONFIG=$<CONFIG>" "-DMODE=${mode}" -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/rail-baseline.cmake")
+    set_tests_properties(rail_${mode} PROPERTIES TIMEOUT 120)
+endforeach()
 foreach(mode IN ITEMS follow draw)
     add_test(NAME baseline_${mode} COMMAND "${CMAKE_COMMAND}"
         "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DREPLAY=$<TARGET_FILE:snooker_replay>" "-DNODE=${NODE_EXECUTABLE}"
@@ -131,6 +140,7 @@ add_dependencies(Tests snooker_test_physics_fault snooker_fault_replay)
 add_dependencies(Tests snooker_test_physics_service)
 add_dependencies(Tests snooker_test_physics_record)
 add_dependencies(Tests snooker_test_shot_replay snooker_replay)
+add_dependencies(Tests snooker_test_rail_baseline)
 add_test(NAME UnitsFailureExit COMMAND snooker_test_units --expect-centimeters 99)
 set_tests_properties(UnitsFailureExit PROPERTIES WILL_FAIL TRUE)
 add_test(NAME tools_core_info COMMAND snooker_core_info)

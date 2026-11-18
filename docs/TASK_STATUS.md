@@ -57,7 +57,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REP-002 | DONE | Recomputed center/22-ball shot-v2 through shared service; exact events/final comparison and tampering rejection passed Debug/Release 59/59 |
 | VAL-005 | DONE | Follow/draw collision, moving slide-to-roll transition, stop/spin traces and exact replay passed Debug/Release 61/61 |
 | VAL-006 | DONE | Left/right cue offsets produce mirrored nonzero cushion deflection and axial spin; baselines/replay passed Debug/Release 62/62 |
-| VAL-007 | IN_PROGRESS | Adding one/two-rail, touching-rail and spin regressions with FPS event/final parity |
+| VAL-007 | DONE | One/two-rail, touching-rail and spin traces plus 30/60/120/144 FPS exact event/final/replay parity passed Debug/Release 66/66 |
+| VAL-008 | IN_PROGRESS | Adding explicit entry/jaw/mouth-stop/recovery/capture pocket baselines |
 
 ## Execution Rules
 
@@ -352,3 +353,10 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 
 - 左右塞杆速 0.4 m/s、Y 偏移 ±0.2r，初始球位在对称位置，经真实库边冲量产生非零横向速度。极向量反射 Y，轴向量反射 X/Z；2587 个逐步样本的镜像误差不超过 1e-9。
 - 两组均第 2586 步/10.775 s 停止，轨迹约 351 KB/353 KB。Test-Current.ps1 -Run val006-a0，Debug/Release 62/62，含独立物理重放、逐步固定基线和镜像断言，不允许两组都无偏移来蒙混过关。
+
+### VAL-007 验收（2026-11-18）
+
+- 一库、两库、贴库分别建立完整记录和 CSV；旋转碰库复用 left 基线。每组按 30/60/120/144 FPS 重算，完整事件与终态逐字节相同，另做逐步容差 1e-9 基线和独立重放。贴库首次响应时间要求 ≤1e-12 s。
+- 一库停止第 361 步、贴库第 557 步、两库第 3725 步且至少两次真实碰库；CSV 分别约 61/99/536 KB，均小于 1 MiB。首次两库夹具路线太长只碰一库，保留失败后改为右上区域两库路线，不降低事件数要求。
+- 两库重试 1 发现斜面/袋边同时接触误报 stale pocket response contact，故障保留 build/two-rail-r1-generated/fault.txt。原因是响应重查任意最早接触替换了原片元；改为按原 Primitive 重验，保持点/法线/特征/穿透校验，伪造片元号仍拒绝。把故障步 206 检查点加入服务回归，不以改路线掩盖问题。
+- Test-Current.ps1 -Run val007-final，最新相同源码 Debug/Release 66/66，全部 exit 0。既有全部基线未重生成且保持通过；val007-a2 构建期间补过测试，只作为中间证据。
