@@ -55,7 +55,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-004 | DONE | Center-strike 476-row short baseline, explicit speed perturbation and first differing step/ball/field report passed Debug/Release 57/57 |
 | VAL-009 | DONE | Exact/tolerant trajectory, event and final-state comparison with first-field reports; contract tests and cross-config 22-ball/center outputs passed; Debug/Release 58/58 |
 | REP-002 | DONE | Recomputed center/22-ball shot-v2 through shared service; exact events/final comparison and tampering rejection passed Debug/Release 59/59 |
-| VAL-005 | IN_PROGRESS | Creating follow/draw and slide-to-roll regression fixtures with real trajectories and physical assertions |
+| VAL-005 | DONE | Follow/draw collision, moving slide-to-roll transition, stop/spin traces and exact replay passed Debug/Release 61/61 |
+| VAL-006 | IN_PROGRESS | Adding mirrored side-spin cushion trajectories with nonzero deflection assertions |
 
 ## Execution Rules
 
@@ -339,3 +340,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ReplayShot/snooker_replay 从记录实际参数、快照、输入重新模拟，每次生成事件立即与记录比较，最终快照逐字节比较，不把已记录事件或终态写进物理状态。构建版本不支持时明确拒绝。
 - Test-Current.ps1 -Run rep002-a0，Debug/Release 59/59。中心记录重算结果相同；改冲量/终点/构建版本则失败，原输出不变；真实 CLI 22 球开局 record.shot 在独立进程中重放通过。
 - 当前范围：本机同求解器构建的确定性重放；未宣称跨平台一致。未来增加的高低杆/库边/袋口基线须继续纳入重放测试。旧 v1 不具备完整参数，不冒充可重放 v2。
+
+### VAL-005 验收（2026-11-18）
+
+- follow/draw 两组固定基线使用相同球桌和球杆，杆速 0.6 m/s，只改变 Z 打点 ±0.5r。目标球相距 0.075 m；高杆首次接触第 11 步后母球正向跟进，低杆第 13 步后母球出现负向速度，独立 Node 断言不是只看终点。
+- 高杆移动中滑滚转换第 5 步，停止第 902 步/3.7583333333333333 s；低杆转换第 24 步，停止第 736 步/3.0666666666666664 s。CSV 每步包含全部速度/角速度，最终均严格零速度且睡眠。
+- 两组 CSV 约 204 KB/165 KB，均小于 1 MiB，附初始快照、输入、完整物理记录。Test-Current.ps1 -Run val005-a0，Debug/Release 61/61，包含逐字段基线比较和独立物理重放。参数仍是工程样例。

@@ -84,6 +84,13 @@ add_test(NAME baseline_center COMMAND "${CMAKE_COMMAND}"
     "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/baseline.cmake")
 set_tests_properties(baseline_center PROPERTIES TIMEOUT 60)
+foreach(mode IN ITEMS follow draw)
+    add_test(NAME baseline_${mode} COMMAND "${CMAKE_COMMAND}"
+        "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DREPLAY=$<TARGET_FILE:snooker_replay>" "-DNODE=${NODE_EXECUTABLE}"
+        "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>" "-DMODE=${mode}"
+        -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/spin-baseline.cmake")
+    set_tests_properties(baseline_${mode} PROPERTIES TIMEOUT 60)
+endforeach()
 add_executable(snooker_test_pocket_simulation tests/pocket_simulation.cpp)
 target_link_libraries(snooker_test_pocket_simulation PRIVATE PhysicsCore)
 add_test(NAME core_pocket_simulation COMMAND snooker_test_pocket_simulation
