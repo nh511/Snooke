@@ -36,6 +36,7 @@ struct PocketSimulationEvent
     PocketSimulationEventKind Kind=PocketSimulationEventKind::Contact;
     PocketFeature Feature=PocketFeature::Jaw;
     Vec3d Point, Normal;
+    Scalar NormalSpeedBefore=0, NormalSpeedAfter=0;
     std::string Serialize() const;
 };
 class PocketSimulation

@@ -76,7 +76,7 @@ bool PocketSimulationConfig::Deserialize(const std::string& Text,PocketSimulatio
 std::string PocketSimulationEvent::Serialize() const
 {
     auto s=Writer();s<<Sequence<<' '<<Step<<' '<<Time<<' '<<Ball<<' '<<Pocket<<' '<<unsigned(Kind)<<' '
-       <<unsigned(Feature)<<' '<<Point.ToString()<<' '<<Normal.ToString();return s.str();
+       <<unsigned(Feature)<<' '<<Point.ToString()<<' '<<Normal.ToString()<<' '<<NormalSpeedBefore<<' '<<NormalSpeedAfter;return s.str();
 }
 bool PocketSimulation::Restore(const PocketSimulationConfig& c,const PhysicsSnapshot& snapshot,std::string* Error)
 {
@@ -100,8 +100,21 @@ bool PocketSimulation::Step(std::string* Error)
 {
     if(!Ready)return Fail(Error,"pocket service not initialized");
     if(IsFaulted())return Fail(Error,"pocket service is faulted");
-    auto next=*this;if(!next.StepInternal(Error)) {
-        if(next.IsFaulted())Fault=next.Fault;
+    PhysicsFault preflight;
+    if(!CheckPhysicsSafety(State,Geometry,Config.Safety,0,preflight,Error)) {
+        Fault=preflight;Fault.Snapshot=State;Fault.ReplayConfig=Config.Serialize();return false;
+    }
+    auto next=*this;std::string message;
+    if(!next.StepInternal(&message)) {
+        if(!next.IsFaulted()) {
+            next.Fault.Code=message.find("contact limit")!=std::string::npos || message.find("cursor overflow")!=std::string::npos?
+                PhysicsFaultCode::EventLoop:message.find("penetration")!=std::string::npos?
+                PhysicsFaultCode::Penetration:PhysicsFaultCode::SolverError;
+            next.Fault.Step=State.StepIndex+1;next.Fault.Time=(State.StepIndex+1)*State.FixedStepSeconds;
+            next.Fault.Ball=State.Balls[0].Id;next.Fault.Message=message;
+        }
+        Fault=next.Fault;Fault.Snapshot=State;Fault.ReplayConfig=Config.Serialize();
+        if(Error)*Error=message;
         return false;
     }
     *this=std::move(next);return true;
@@ -109,17 +122,12 @@ bool PocketSimulation::Step(std::string* Error)
 bool PocketSimulation::StepInternal(std::string* Error)
 {
     if(State.StepIndex==std::numeric_limits<std::uint64_t>::max())return Fail(Error,"step counter overflow");
-    auto fault=[&](const std::string& message) {
-        PhysicsFault detected;const auto code=message.find("timeout")!=std::string::npos?PhysicsFaultCode::Timeout:
-          message.find("event")!=std::string::npos?PhysicsFaultCode::EventLoop:PhysicsFaultCode::SolverError;
-        CheckPhysicsSafety(State,Geometry,Config.Safety,Events.size(),detected,nullptr);
-        if(detected.Code==PhysicsFaultCode::None) {detected.Code=code;detected.Step=State.StepIndex;detected.Time=State.SimulationTimeSeconds;detected.Message=message;detected.Snapshot=State;}
-        Fault=detected;if(Error)*Error=message;return false;
-    };
+    const auto eventStart=State.EventCount;
     auto& ball=State.Balls[0];auto& pocketState=State.PocketStates[0];
     const auto previous=ball.PositionMeters;
     auto emit=[&](PocketSimulationEventKind kind,const PocketGeometry& p,Seconds t,const PocketContact* contact) {
-        if(State.EventCount==std::numeric_limits<std::uint64_t>::max())return false;
+        if(State.EventCount==std::numeric_limits<std::uint64_t>::max() ||
+           State.EventCount-eventStart>=Config.Safety.MaxEventsPerStep)return false;
         Events.push_back({State.EventCount++,State.StepIndex+1,t,ball.Id,p.Definition.Id,kind,
            contact?contact->Feature:PocketFeature::Jaw,contact?contact->Point:ball.PositionMeters,
            contact?contact->Normal:p.Inward});return true;
@@ -136,7 +144,7 @@ bool PocketSimulation::StepInternal(std::string* Error)
         }
         Seconds remaining=dt,elapsed=0;
         for(unsigned iterations=0;remaining>0;++iterations) {
-            if(iterations==128)return Fail(Error,"pocket substep contact limit exceeded");
+            if(iterations>=Config.Safety.MaxEventsPerStep)return Fail(Error,"pocket substep contact limit exceeded");
             const PocketGeometry* chosen=nullptr;PocketContact contact;
             Seconds earliest=remaining;int action=0; // 1 contact, 2 mouth entry, 3 recovery
             for(const auto& p:Geometry.Pockets) {
@@ -171,8 +179,11 @@ bool PocketSimulation::StepInternal(std::string* Error)
             } else {
                 contact.Time=0;
                 if(contact.InitiallyOverlapping)return Fail(Error,"initial pocket penetration");
+                const auto incoming=ball.LinearVelocityMetersPerSecond.Dot(contact.Normal);
                 if(!ReflectPocketContact(ball,*chosen,contact,Error))return false;
                 if(!emit(PocketSimulationEventKind::Contact,*chosen,time,&contact))return Fail(Error,"event cursor overflow");
+                Events.back().NormalSpeedBefore=incoming;
+                Events.back().NormalSpeedAfter=ball.LinearVelocityMetersPerSecond.Dot(contact.Normal);
                 if(contact.Feature==PocketFeature::Bottom) {
                     if(ball.PositionMeters.Z> -chosen->Parameters.CaptureDepth+ball.RadiusMeters+1e-8)
                         return Fail(Error,"bottom above capture depth");
@@ -193,12 +204,13 @@ bool PocketSimulation::StepInternal(std::string* Error)
     ++State.StepIndex;State.SimulationTimeSeconds=State.StepIndex*State.FixedStepSeconds;
     State.Phase=ESnapshotPhase::DuringStep;
     PhysicsFault detected;
-    if(!CheckPhysicsSafety(State,Geometry,Config.Safety,Events.size(),detected,Error)) {Fault=detected;return false;}
+    if(!CheckPhysicsSafety(State,Geometry,Config.Safety,State.EventCount-eventStart,detected,Error)) {Fault=detected;return false;}
     return true;
 }
 bool PocketSimulation::SaveFault(const std::string& Path,std::string* Error) const
 {
     if(!IsFaulted())return Fail(Error,"no physics fault is available");
+    if(!Fault.IsValid(Error))return false;
     std::ofstream File(Path);if(!File || !(File<<Fault.Serialize()))return Fail(Error,"cannot write physics fault");
     File.flush();if(!File)return Fail(Error,"physics fault flush failed");return true;
 }

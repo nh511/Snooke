@@ -3,55 +3,35 @@
 #include <iomanip>
 #include <locale>
 #include <sstream>
-#include <set>
 
 namespace Snooker
 {
 namespace
 {
 bool Fail(std::string* Error,const char* Message){if(Error)*Error=Message;return false;}
-bool Token(const std::string& Value){return !Value.empty() && Value.find_first_of(" \t\r\n")==std::string::npos;}
 void SetFault(PhysicsFault& Output,PhysicsFaultCode Code,const PhysicsSnapshot& Snapshot,
               BallId Ball,const std::string& Message)
 {
-    Output.Code=Code;Output.Step=Snapshot.StepIndex;Output.Time=Snapshot.SimulationTimeSeconds;
-    Output.Ball=Ball;Output.Message=Message;Output.Snapshot=Snapshot;
+    Output=PhysicsFault{};Output.Code=Code;Output.Step=Snapshot.StepIndex;Output.Time=Snapshot.SimulationTimeSeconds;
+    Output.Ball=Ball;Output.Message=Message;
+    if(Snapshot.IsValid())Output.Snapshot=Snapshot;
+    else {
+        std::ostringstream diagnostic;diagnostic.imbue(std::locale::classic());
+        diagnostic<<std::setprecision(17)<<"step="<<Snapshot.StepIndex<<" time="<<Snapshot.SimulationTimeSeconds
+            <<" dt="<<Snapshot.FixedStepSeconds<<" debt="<<Snapshot.AccumulatorSeconds;
+        for(const auto& ball:Snapshot.Balls)diagnostic<<"\nball "<<ball.Serialize();
+        for(const auto& p:Snapshot.PocketStates)diagnostic<<"\npocket "<<unsigned(p.State)<<' '<<p.PocketId<<' '<<p.PotEventEmitted;
+        Output.CandidateDiagnostic=diagnostic.str();
+        // A rejected input has no valid checkpoint. Preserve it as diagnostics;
+        // do not fabricate repaired positions/velocities and call that replay.
+        if(!IsFinite(Output.Time) || Output.Time<0)Output.Time=0;
+    }
 }
 bool FiniteBall(const BallState& Ball)
 {
     return Ball.PositionMeters.IsFinite() && Ball.LinearVelocityMetersPerSecond.IsFinite() &&
            Ball.AngularVelocityRadiansPerSecond.IsFinite() && IsFinite(Ball.RadiusMeters) &&
            IsFinite(Ball.MassKg) && IsFinite(Ball.SleepTimeSeconds);
-}
-PhysicsSnapshot RecoverableSnapshot(const PhysicsSnapshot& Source)
-{
-    auto Result=Source;Result.SchemaVersion=PhysicsSnapshot::CurrentSchemaVersion;
-    if(!IsFinite(Result.FixedStepSeconds) || Result.FixedStepSeconds<1e-6 || Result.FixedStepSeconds>1)
-        Result.FixedStepSeconds=1.0/240;
-    if(!IsFinite(Result.AccumulatorSeconds) || Result.AccumulatorSeconds<0)Result.AccumulatorSeconds=0;
-    if(!IsFinite(Result.SimulationTimeSeconds) || Result.SimulationTimeSeconds<0)Result.SimulationTimeSeconds=0;
-    const auto calculated=Result.SimulationTimeSeconds/Result.FixedStepSeconds;
-    if(!IsFinite(calculated) || calculated<0 || calculated>static_cast<Scalar>(std::numeric_limits<std::uint64_t>::max()))
-        Result.StepIndex=0;
-    else Result.StepIndex=std::max(Result.StepIndex,static_cast<std::uint64_t>(calculated));
-    Result.SimulationTimeSeconds=Result.StepIndex*Result.FixedStepSeconds;
-    Result.AccumulatorSeconds=0;Result.Phase=ESnapshotPhase::DuringStep;
-    std::set<BallId> ids;
-    for(auto& Ball:Result.Balls) {
-        if(!ids.insert(Ball.Id).second || Ball.Id==0)Ball.Id=static_cast<BallId>(ids.size()+1),ids.insert(Ball.Id);
-        if(!Ball.PositionMeters.IsFinite())Ball.PositionMeters={};
-        if(!Ball.LinearVelocityMetersPerSecond.IsFinite())Ball.LinearVelocityMetersPerSecond={};
-        if(!Ball.AngularVelocityRadiansPerSecond.IsFinite())Ball.AngularVelocityRadiansPerSecond={};
-        if(!IsFinite(Ball.RadiusMeters) || Ball.RadiusMeters<=0)Ball.RadiusMeters=0.02625;
-        if(!IsFinite(Ball.MassKg) || Ball.MassKg<=0)Ball.MassKg=0.142;
-        if(!IsFinite(Ball.SleepTimeSeconds) || Ball.SleepTimeSeconds<0)Ball.SleepTimeSeconds=0;
-        if(Ball.MaterialProfileId.empty() || !Token(Ball.MaterialProfileId))Ball.MaterialProfileId="standard";
-        Ball.Contact={EContactKind::None,0,TableNormal};
-    }
-    Result.PocketStates.resize(Result.Balls.size());
-    for(auto& State:Result.PocketStates)State={PocketState::OnCloth,0,false};
-    Result.EventCount=0;
-    return Result;
 }
 }
 const char* PhysicsFaultCodeName(PhysicsFaultCode Code)
@@ -108,7 +88,7 @@ bool PhysicsFault::IsValid(std::string* Error) const
 {
     if(Code==PhysicsFaultCode::None || std::string(PhysicsFaultCodeName(Code))=="Unknown" ||
        !IsFinite(Time) || Message.empty() || !Snapshot.IsValid(Error) ||
-       Step!=Snapshot.StepIndex || !NearlyEqual(Time,Snapshot.SimulationTimeSeconds))
+       Time<0 || Step<Snapshot.StepIndex)
         return Fail(Error,"invalid physics fault record");
     return true;
 }
@@ -116,17 +96,21 @@ std::string PhysicsFault::Serialize() const
 {
     std::ostringstream Stream;Stream.imbue(std::locale::classic());
     Stream<<std::setprecision(std::numeric_limits<Scalar>::max_digits10)
-          <<"snooker-fault-v1 "<<PhysicsFaultCodeName(Code)<<' '<<Step<<' '<<Time<<' '<<Ball<<' '
-          <<std::quoted(Message)<<' '<<std::quoted(Snapshot.Serialize());
+          <<"snooker-fault-v2 "<<PhysicsFaultCodeName(Code)<<' '<<Step<<' '<<Time<<' '<<Ball<<' '
+          <<std::quoted(Message)<<' '<<std::quoted(Snapshot.Serialize())<<' '
+          <<std::quoted(CandidateDiagnostic)<<' '<<std::quoted(ReplayConfig);
     return Stream.str();
 }
 bool PhysicsFault::Deserialize(const std::string& Text,PhysicsFault& Output,std::string* Error)
 {
     std::istringstream Stream(Text);Stream.imbue(std::locale::classic());PhysicsFault Candidate;std::string Magic,CodeName,SnapshotText;
-    if(!(Stream>>Magic>>CodeName) || Magic!="snooker-fault-v1" || !TryParsePhysicsFaultCode(CodeName,Candidate.Code) ||
+    if(Text.size()>32*1024*1024)return Fail(Error,"fault file exceeds 32 MiB");
+    if(!(Stream>>Magic>>CodeName) || (Magic!="snooker-fault-v1" && Magic!="snooker-fault-v2") || !TryParsePhysicsFaultCode(CodeName,Candidate.Code) ||
        !ReadUnsigned(Stream,Candidate.Step) || !(Stream>>Candidate.Time) || !ReadUnsigned(Stream,Candidate.Ball) ||
        !(Stream>>std::quoted(Candidate.Message)>>std::quoted(SnapshotText)) ||
        !PhysicsSnapshot::Deserialize(SnapshotText,Candidate.Snapshot,Error))return Fail(Error,"invalid physics fault record");
+    if(Magic=="snooker-fault-v2" && !(Stream>>std::quoted(Candidate.CandidateDiagnostic)>>std::quoted(Candidate.ReplayConfig)))
+        return Fail(Error,"missing fault diagnostics/config");
     Stream>>std::ws;if(!Stream.eof())return Fail(Error,"unexpected physics fault tail");
     if(!Candidate.IsValid(Error))return false;Output=std::move(Candidate);return true;
 }
@@ -142,10 +126,11 @@ bool CheckPhysicsSafety(const PhysicsSnapshot& Candidate,const TableGeometry& Ge
     if(Candidate.SimulationTimeSeconds>Limits.MaxSimulationTimeSeconds)
         return fail(PhysicsFaultCode::Timeout,0,"physics simulation timeout");
     if(EventsThisStep>Limits.MaxEventsPerStep)return fail(PhysicsFaultCode::EventLoop,0,"physics event loop limit exceeded");
-    if(!Candidate.IsValid(Error)) {
-        const auto message=Error?*Error:"invalid physics snapshot";
-        const auto code=message.find("finite")!=std::string::npos?PhysicsFaultCode::NonFinite:PhysicsFaultCode::SolverError;
-        const auto safe=RecoverableSnapshot(Candidate);SetFault(Output,code,safe,0,message);if(Error)*Error=message;return false;
+    for(const auto& ball:Candidate.Balls)if(!FiniteBall(ball))
+        return fail(PhysicsFaultCode::NonFinite,ball.Id,"nonfinite ball state");
+    std::string validationError;
+    if(!Candidate.IsValid(&validationError)) {
+        return fail(PhysicsFaultCode::SolverError,0,validationError.c_str());
     }
     for(std::size_t i=0;i<Candidate.Balls.size();++i) {
         const auto& Ball=Candidate.Balls[i];
@@ -164,13 +149,18 @@ bool CheckPhysicsSafety(const PhysicsSnapshot& Candidate,const TableGeometry& Ge
             continue;
         }
         const auto penetration=Ball.RadiusMeters-Ball.PositionMeters.Z;
-        if(penetration>Limits.MaxPenetrationMeters)return fail(PhysicsFaultCode::Penetration,Ball.Id,"ball penetrated cloth support");
+        if((pocket.State==PocketState::OnCloth || pocket.State==PocketState::Ejected) && penetration>Limits.MaxPenetrationMeters)
+            return fail(PhysicsFaultCode::Penetration,Ball.Id,"ball penetrated cloth support");
         if((pocket.State==PocketState::OnCloth || pocket.State==PocketState::Ejected) && Geometry.Cloth.IsValid() &&
-           (Ball.PositionMeters.X-Ball.RadiusMeters<Geometry.Cloth.Min.X ||
-           Ball.PositionMeters.X+Ball.RadiusMeters>Geometry.Cloth.Max.X ||
-           Ball.PositionMeters.Y-Ball.RadiusMeters<Geometry.Cloth.Min.Y ||
-           Ball.PositionMeters.Y+Ball.RadiusMeters>Geometry.Cloth.Max.Y))
+           (Ball.PositionMeters.X<Geometry.Cloth.Min.X || Ball.PositionMeters.X>Geometry.Cloth.Max.X ||
+            Ball.PositionMeters.Y<Geometry.Cloth.Min.Y || Ball.PositionMeters.Y>Geometry.Cloth.Max.Y))
             return fail(PhysicsFaultCode::LeftTable,Ball.Id,"ball left playable cloth bounds");
+        for(std::size_t j=0;j<i;++j) {
+            if(!Candidate.PocketStates.empty() && Candidate.PocketStates[j].State==PocketState::Potted)continue;
+            const auto& other=Candidate.Balls[j];
+            if(Ball.RadiusMeters+other.RadiusMeters-(Ball.PositionMeters-other.PositionMeters).Length()>Limits.MaxPenetrationMeters)
+                return fail(PhysicsFaultCode::Penetration,Ball.Id,"ball pair penetration");
+        }
     }
     Output=PhysicsFault{};return true;
 }

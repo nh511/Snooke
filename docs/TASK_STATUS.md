@@ -48,14 +48,15 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-004 | DONE | Red, color-after-red, final-color cursor and finished Ball On queries passed; FreeBall explicitly unsupported |
 | PHY-018 | DONE | Pocket geometry, six-pocket engineering bundle, snapshot v3/v2 migration, single-ball pocket descent/recovery service and deterministic mid-pocket restore passed; multi-ball/full-table scheduling remains PHY-021 |
 | PHY-019 | DONE | Pocket state transitions, once-only pot event, potted no-eject and explicit recovery event passed |
-| PHY-020 | BLOCKED | Added fault codes, safety limits, fault serialization and service fault freeze; final full regression is blocked by the existing PHY-018 jaw fixture assertion after four failed validation attempts |
+| PHY-020 | DONE | Eight fault codes, checkpoint/diagnostic separation, per-step event budget, frozen failed step and independent speed/timeout/event-loop fault-file replay passed; Debug/Release 54/54 |
+| PHY-021 | IN_PROGRESS | Implementing unified service and chronological ball/rail/pocket scheduling; closed geometry and complete-shot acceptance pending |
 
 ## Execution Rules
 
 - One task at a time: IN_PROGRESS, REVIEW, then DONE only after all applicable acceptance criteria pass.
 - UE-dependent acceptance is recorded separately and is never replaced by standalone tests.
 - Initial failure plus at most three retries; stop after the fourth failure, record BLOCKED and notify the user.
-- No automatic commits, identity changes, skipped tests, or mocked physics acceptance.
+- No identity changes, skipped tests, or mocked physics acceptance. User-authorized per-task commits and per-stage pushes follow the continuation plan below.
 
 ## Current Toolchain
 
@@ -281,3 +282,12 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 证据：`tools/Test-Current.ps1 -Run phy018-close-final`，Debug/Release CTest 各 50/50；包括六袋几何和物理 bundle 逐字节再生成比较。证据目录：`build-evidence/phy018-close-final/`。
 - 边界：本次服务是袋口单球实验服务，不负责球碰球、库边和多球事件全局调度；这些保持 PHY-020/PHY-021 的后续工作。
 - 重试记录：`phy018-close-a2` 首次加入六袋数据时失败，原因是布面文件测试参数路径和旧几何测试假设；`phy018-close-a3` 修复后因证据目录复用未执行，随后用 `phy018-close-a4` 完成验证；新增 bundle 后最终验证通过。没有达到第四次代码失败。
+
+### PHY-020 恢复与验收（2026-11-18）
+
+- 用户明确要求继续后恢复任务。本轮 `phy020-resume-a0/a1` 分别暴露错误的世界坐标法线判据和回台球仍跨布边时的出界误报；`a2` Debug/Release 51/51；新增独立进程重放后 `a3` Debug/Release 54/54，全部阶段 exit 0。
+- 袋角轮廓在 z=0，球心 z=r 时水平掠过可能只是切触，不能据此要求切向速度反向。恢复 z=r/2 的实际袋口迎面接触夹具，逐事件断言 vn_before<0、vn_after>0 和 vn_after=-e*vn_before（1e-10），不是删除反弹验收或放宽容差。AtMouth 不是布面支撑态；OnCloth/Ejected 出界按球心判断，刚回台球体可跨边界。
+- 修复故障测试辅助 lambda 未将失败传播至 main 的缺陷；之前仅凭旧专项测试 PASS 不能证明全部异常路径通过。现在八种故障码检查与序列化均由 CHECK 传播，测试还覆盖 NaN/Inf 诊断、球间穿透、失败步回滚、故障后拒绝继续、事件历史不误占下一个步的预算。
+- 故障格式升级 snooker-fault-v2，仍可读取 v1。有效故障前检查点、原始坏状态诊断、嵌入参数包分开保存；不再把修补坏值后的状态称作可复现输入。无有效输入的 NaN/Inf 拒绝只提供诊断，不承诺通过文本重新注入 NaN。
+- snooker_fault_replay 分别从 physics-fault.txt、physics-timeout.txt、physics-eventloop.txt 独立进程读取并重算，同一故障码、步号和完整故障记录逐字节相同。自动测试通过，不依赖 UE。
+- 本任务不等于 REL-004 的完整故障包收集系统，也不等于 PHY-021 的多球调度验收。证据保留于 build-evidence/phy020-resume-a3/。

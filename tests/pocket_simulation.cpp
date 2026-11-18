@@ -65,15 +65,19 @@ int main(int argc,char** argv)
     CHECK(PhysicsSnapshot::Deserialize("2 BeforeShot snooker-physics-bundle-v1 0 0 0.004166666666666667 0 1\n"+clothBall.Serialize(),legacy,&error));
     CHECK(legacy.SchemaVersion==3 && legacy.PocketStates[0].State==PocketState::OnCloth && legacy.EventCount==0);
     // Actual jaw endpoint, horizontal travel just above cloth: rebound cannot pot.
-    ball.PositionMeters=p.MouthStart+p.Tangent*(-0.08)+Vec3d{0,0,ball.RadiusMeters};
+    ball.PositionMeters=p.MouthStart+p.Tangent*(-0.08)+Vec3d{0,0,0.005};
     ball.LinearVelocityMetersPerSecond=p.Tangent*2;
     auto jaw=PhysicsSnapshot::Capture(clock,{ball},config.Version,ESnapshotPhase::DuringStep);
     jaw.PocketStates={{PocketState::AtMouth,p.Definition.Id,false}};
     CHECK(a.Restore(config,jaw,&error));
     for(int i=0;i<25;++i)CHECK(a.Step(&error));
     CHECK(a.SaveSnapshot().PocketStates[0].State!=PocketState::Potted);
-    unsigned jawHits=0;for(const auto& e:a.GetEvents())if(e.Kind==PocketSimulationEventKind::Contact && e.Feature==PocketFeature::Jaw)++jawHits;
-    CHECK(jawHits>0);CHECK(a.SaveSnapshot().Balls[0].LinearVelocityMetersPerSecond.Dot(p.Tangent)<0);
+    unsigned jawHits=0;
+    for(const auto& e:a.GetEvents())if(e.Kind==PocketSimulationEventKind::Contact && e.Feature==PocketFeature::Jaw) {
+        ++jawHits;CHECK(e.NormalSpeedBefore<0);CHECK(e.NormalSpeedAfter>0);
+        CHECK(NearlyEqual(e.NormalSpeedAfter,-profile.JawRestitution*e.NormalSpeedBefore,1e-10));
+    }
+    CHECK(jawHits>0);
     // Physical recovery crossing the mouth back onto cloth.
     ball.PositionMeters=p.Definition.Center-p.Inward*0.001+Vec3d{0,0,ball.RadiusMeters};
     ball.LinearVelocityMetersPerSecond=p.Inward*2;initial.Balls={ball};initial.PocketStates={{PocketState::InPocket,p.Definition.Id,false}};

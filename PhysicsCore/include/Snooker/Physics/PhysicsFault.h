@@ -42,6 +42,9 @@ struct PhysicsFault
     BallId Ball=0;
     std::string Message;
     PhysicsSnapshot Snapshot;
+    // Snapshot is a validated checkpoint, never a silently repaired candidate.
+    std::string CandidateDiagnostic;
+    std::string ReplayConfig;
 
     bool IsValid(std::string* Error=nullptr) const;
     std::string Serialize() const;
