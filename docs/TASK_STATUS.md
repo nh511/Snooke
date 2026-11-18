@@ -60,6 +60,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-007 | DONE | One/two-rail, touching-rail and spin traces plus 30/60/120/144 FPS exact event/final/replay parity passed Debug/Release 66/66 |
 | VAL-008 | DONE | Entry/jaw/mouth-stop/recovery/capture fixtures assert pot/no-pot and exact midpoint restore; Debug/Release 67/67 |
 | REP-003 | DONE | Sparse solver checkpoints, exact step/time/event seek, first collision/pot and fault checkpoint tests passed Debug/Release 68/68 |
+| RUL-002 | DONE | Read-only typed shot physics input validates metadata/events/pot transitions and cached result; real pot and corruption tests passed Debug/Release 69/69 |
 
 ## Execution Rules
 
@@ -379,3 +380,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ReplayController 先实际重算并校验记录，每 120 步保留求解器检查点，跳转至最近前置检查点后重算，不保存所有步/所有球的全量常驻缓存。SeekStep/SeekTime/SeekEvent/SeekFault 提供只读快照，时间定位为首个不早于目标时间的完成物理步。
 - 测试逐个步号与连续模拟序列化快照一致、逆序事件跳转、首个真实碰撞、首个真实落袋，以及超时故障的真实故障前检查点。非法步/事件/NaN 时间或坏记录不会改变当前状态。
 - Test-Current.ps1 -Run rep003-a0，Debug/Release 68/68，全部 exit 0。阶段 2 的 11 项已完成；准备干净副本验证和阶段推送。完成数 43/121（REVIEW=10，BLOCKED=2，TODO=66）。
+
+### RUL-002 验收（2026-11-18）
+
+- ShotPhysicsResult/BuildShotRuleInput 显式接收 BallDefinition，核对 ID/球类型/半径/质量/材质；不从 ID 或 Actor 猜球类型。只读投影物理事件得到母球首次碰球、顺序落袋列表和母球落袋标记，检查事件游标、状态转移和最终静止。
+- 真实高杆碰撞记录、真实服务进红球验证；重复元数据、无母球、篡改 FirstContact/Potted 缓存、错误事件序号等拒绝，失败不修改输出。故障模拟不得计分。源码扫描无 Unreal 头文件。
+- Test-Current.ps1 -Run rul002-a0，Debug/Release 69/69，全部 exit 0。它只提供规则输入，不提前宣称犯规/计分/回合已完成。
