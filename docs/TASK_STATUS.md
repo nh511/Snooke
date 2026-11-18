@@ -50,6 +50,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | PHY-019 | DONE | Pocket state transitions, once-only pot event, potted no-eject and explicit recovery event passed |
 | PHY-020 | DONE | Eight fault codes, checkpoint/diagnostic separation, per-step event budget, frozen failed step and independent speed/timeout/event-loop fault-file replay passed; Debug/Release 54/54 |
 | PHY-021 | DONE | Unified service/CLI, closed six-pocket boundary, multi-contact scheduling, 22-ball opening/training pot and mid-shot continuation passed; clean-copy Debug/Release 56/56 |
+| REP-001 | DONE | shot-v2 embeds bundle/input/initial/final/events; real 22-ball record file round trip and malformed/order/reference/version rejection passed Debug/Release 56/56 |
+| VAL-003 | IN_PROGRESS | Adding fixed-step multi-ball CSV and JSON result/viewer export with independent Node validation |
 
 ## Execution Rules
 
@@ -303,3 +305,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 完整 record.shot/JSON/CSV 属 REP-001/VAL-003，当前简版 events.txt 不能替代完整单杆记录。
 - 阶段 1 干净副本验证：Verify-Standalone.ps1 -Run stage1-n18，configure/Debug build/Debug test/Release build/Release test 全部 exit 0，双配置各 56/56，无跳过；本地最终 phy021-pot 亦双配置 56/56。Debug/Release 开局 final.snapshot 和 events.txt 的 SHA-256 分别一致。
 - 当前 DONE=32/121、REVIEW=11、BLOCKED=2（UE）、TODO=76。阶段 1 已完成，准备提交并按授权推送；尚无 UE 安装/编译或实测校准结论。
+
+### REP-001 验收（2026-11-18）
+
+- PhysicsShotRecord/snooker-shot-v2 内嵌真实 PhysicsBundle v2、初始快照 v3、ShotInput、逐事件完整数据、终态和 Settled/fault 结果。旧 ShotRecord v1 保留，不静默升级成可回放记录。
+- snooker_simulate 写出 record.shot；独立 CLI 的真实 22 球记录逐字节往返，缺块、未知版本、乱序事件、球/库/袋引用、负冲量、球属性变化和游标不一致均拒绝，失败不改目标。属于格式验收，重新运行物理与结果比对仍属 REP-002。
+- Test-Current.ps1 -Run rep001-a0，Debug/Release 56/56（格式测试在 physics_service_cli 中调用），全部 exit 0。阶段 1 已推送 c073b11；阶段 2 按计划结束时推送。

@@ -1,5 +1,16 @@
 # ShotRecord v1 (COR-005)
 
+## Full Standalone Shot v2 (REP-001)
+
+PhysicsShotRecord uses snooker-shot-v2 and embeds the full loaded PhysicsBundle,
+initial/final snapshot v3, cue input, sequential PhysicsEvents, build version and
+Settled/fault result. snooker_simulate writes record.shot in binary/LF with full
+double precision. Fault results may embed a PhysicsFault record. Version/reference,
+cursor, ball-property, event-order and settled-state checks are transactional.
+The v1 type below remains the legacy single-ball transport, not full physics replay.
+Parsing/round-trip proves transport integrity, not recomputed dynamics; REP-002
+must independently rerun and compare all events and final state.
+
 Standalone UTF-8 text schema: snooker-shot-v1 build-version, config quoted-CoreConfig, initial quoted-PhysicsSnapshot-v2, input quoted-ShotInput, events count followed by event records, final quoted-PhysicsSnapshot-v2, result token, end. Quoting uses C++ std::quoted: embedded quotes/backslashes are escaped; embedded line breaks are real line breaks. Classic locale and full double precision are required.
 
 Event: completed step, time (s), kind token, ball ID, optional other ball ID (0 for none), contact point XYZ (m), normal XYZ. This is a transport record, not a completed collision event solver. Event order, finite fields, ball references and record time bounds are validated. PHY-014 now provides a separate rich CollisionLog with pre/post velocities and energy diagnostics. Integrating that log and ball/cushion/pocket material bytes into complete ShotRecord replay requires explicit schema extension before full replay acceptance.

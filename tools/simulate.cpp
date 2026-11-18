@@ -1,4 +1,5 @@
 #include <Snooker/Service/ISnookerPhysicsService.h>
+#include <Snooker/Replay/PhysicsShotRecord.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -31,8 +32,16 @@ int main(int argc,char** argv)
         for(unsigned frame=0;frame<100000 && state==PhysicsRunState::Running;++frame) {
             if(!service->Step(1.0/60,state,&error))throw std::runtime_error(error);
         }
-        if(state==PhysicsRunState::Faulted){Write(out/"fault.txt",service->GetFault().Serialize());throw std::runtime_error(error);}
+        PhysicsShotRecord record;record.Parameters=bundle;record.Initial=initial;record.Input=input;
+        record.Final=service->SaveSnapshot();record.Events=service->GetEvents();
+        if(state==PhysicsRunState::Faulted){
+            record.Fault=service->GetFault();record.Result=std::string("fault:")+PhysicsFaultCodeName(record.Fault.Code);
+            Write(out/"fault.txt",record.Fault.Serialize());
+            if(record.IsValid())Write(out/"record.shot",record.Serialize());throw std::runtime_error(error);
+        }
         if(state!=PhysicsRunState::Settled)throw std::runtime_error("frame budget exhausted");
+        if(!record.IsValid(&error))throw std::runtime_error(error);
+        Write(out/"record.shot",record.Serialize());
         std::string events;for(const auto& event:service->GetEvents())events+=event.Serialize()+"\n";
         Write(out/"events.txt",events);Write(out/"final.snapshot",service->SaveSnapshot().Serialize());
         std::cout<<"PASS settled step="<<service->SaveSnapshot().StepIndex<<" events="<<service->GetEvents().size()<<'\n';
