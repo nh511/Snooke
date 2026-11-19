@@ -1,0 +1,7 @@
+file(READ "${SOURCE}/docs/NETWORK_SYNC_DESIGN.md" text)
+foreach(required IN ITEMS "server authoritative" "version mismatch is rejected" "ShotStart" "pre-shot snapshot" "complete post-shot snapshot" "event hash" "final snapshot hash" "rollback" "replay" "disconnects" "MatchState" "PhysicsBundle")
+  string(FIND "${text}" "${required}" position)
+  if(position EQUAL -1)
+    message(FATAL_ERROR "network design missing: ${required}")
+  endif()
+endforeach()

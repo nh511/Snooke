@@ -76,7 +76,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REP-005 | DONE | Explicit Match v1/Snapshot v2 migration, current frame/shot inspection and incompatible legacy/future reports passed Debug/Release 82/82 |
 | REL-004 | DONE | Standalone fault package with checkpoint/bundle/input/log/manifest reproduces same fault from package only; Debug/Release 83/83 |
 | REL-002 | DONE | 50-shot dual-config and 2000-shot Release deterministic stability passed; 0 faults, <1 MiB growth, no hang/unhandled exception |
-| REL-006 | IN_PROGRESS | Writing authoritative input/snapshot/hash/resync/version-rejection network sync design |
+| REL-006 | DONE | Server-authoritative shot/input/hash/resync/rollback/version-rejection design and automated content contract passed Debug/Release 85/85 |
+| AIC-001 | IN_PROGRESS | Adding immutable AI match/physics/cue query snapshot and legal-target lookup |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -494,3 +495,10 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - CTest stability_50：Debug 50 杆约 15.2 s、Release 约 1.28 s，均 0 故障、内存增长 0、相同 hash=11203345963539698158、最大 1098 步/4 事件。Test-Current.ps1 -Run rel002-final，双配置 84/84。
 - 计划要求的 Release 2000 杆：70.734 s，0 故障、无卡死/异常，内存从 4,202,496 到 5,050,368，增长 847,872 字节 <10 MiB，最大 1286 步/4 事件，hash=17146014793590329516；报告 build-evidence/stability-2000-release.json。
 - rel002-a0 编译失败（Windows max 宏/混合 auto）；a1 证据目录复用未执行；a2 模拟成功但 CMake 正则转义错误；改用 string(JSON) 后 final 通过。未放宽稳定性阈值。
+
+### REL-006 验收（2026-11-19）
+
+- NETWORK_SYNC_DESIGN.md 定义按杆服务器权威协议：握手比较游戏/求解器/PhysicsBundle/RulesProfile/快照/事件/存档版本；ShotStart 同步预杆快照+输入；客户端本地重算但不提交比分/球位。
+- 每杆结束比较规范事件/终态哈希；首差异停止规则提交，重新核对版本并请求完整 MatchState、球定义、shot record 和整份后快照。禁止局部球位补丁，恢复失败或版本/hash 仍不一致则断线。
+- 预测仅用于瞄准/动画/可选球运动，回滚粒度一杆，恢复预杆快照并重演权威输入。资源/认证/重放攻击和故障包策略已写明；这是设计文档，不声称网络传输已实现。
+- network_sync_design CTest 检查关键协议约束。初始专项仅因检查短语大小写/措辞不匹配两次失败，修正测试契约后通过；Test-Current.ps1 -Run rel006-final Debug/Release 85/85 全部通过。
