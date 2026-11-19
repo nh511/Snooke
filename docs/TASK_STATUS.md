@@ -82,7 +82,6 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | AIC-003 | DONE | Candidate shared-service evaluation, shot-v2 record, scoring diagnostics, immutable query and exact replay passed Debug/Release 88/88 |
 | AIC-004 | DONE | Enumerated legal target/pocket/speed candidates, physically evaluated and selected a real scoring shot; Debug/Release 89/89 |
 | AIC-005 | DONE | Seeded difficulty error plus offense/safety/risk explainable weighting selects different real easy/hard shots; Debug/Release 90/90 |
-| RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
 
