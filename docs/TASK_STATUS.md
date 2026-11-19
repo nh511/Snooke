@@ -70,6 +70,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-011 | DONE | Own/highest-alternate/no-spot color respot and deterministic high-value multi-color ordering passed Debug/Release 76/76 |
 | RUL-012 | DONE | Yellow-through-black ordered removal, no-respot, wrong-sequence/miss result and final black completion passed Debug/Release 77/77 |
 | REP-004 | DONE | frame-v1 embeds game/bundle/match/physics/definitions/shot history; two-process continuation equals uninterrupted two shots; Debug/Release 78/78 |
+| RUL-015 | DONE | Unequal-score winner, tied respotted black, black decision and deterministic next-frame opening passed Debug/Release 79/79 |
+| RUL-013 | IN_PROGRESS | Adding snookered detection, nomination/value and free-ball no-snooker constraint |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -450,3 +452,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - FrameSave/snooker-frame-v1 保存游戏版本、完整 PhysicsBundle、MatchState v2、当前 PhysicsSnapshot v3、显式球定义和完整 shot-v2 历史；检查参数版本、球集合/物性、唯一母球、历史参数一致和资源上限。
 - snooker_frame --continue 从已静止存档规范化新杆 BeforeShot，运行统一服务，追加记录并原子输出新存档。CTest 先建非默认比分/当前球员存档，再用两个独立进程各继续一杆，最终与单进程连续两杆逐字节一致；关闭/重启不丢 MatchState。
 - 首次专项 CMake 脚本单行 if 语法失败；重试 1 发现第二杆初始阶段仍为 AfterShot；规范化为 BeforeShot 后专项通过。Test-Current.ps1 -Run rep004-final，Debug/Release 78/78，全部 exit 0。存档迁移仍属 REP-005。
+
+### RUL-015 验收（2026-11-19）
+
+- ResolveFrameEnd：Finished 且分数不等给出 Winner；平分时按调用方显式 starter 进入 FinalColors/Black/RespottedBlack；重摆黑球后产生分差则 Finished。状态旗标清理并保持事务性。
+- StartNextFrame 要求已完成且非平分，复用 CreateFrameOpening，frame 编号加一，显式 Breaker，比分/旗标/球位归零；旧 frame 状态不修改，可由 FrameSave 历史回放。
+- Test-Current.ps1 -Run rul015-a0，Debug/Release 79/79，全部 exit 0。抽签/开球方由调用方传入，核心不使用随机数。
