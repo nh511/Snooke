@@ -65,19 +65,12 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-006 | DONE | Cue-ball pot foul, ball-in-hand D placement, same-shot object-score suppression and invalid position/overlap rejection passed Debug/Release 71/71 |
 | RUL-007 | DONE | Explicit legal/wrong/no-contact first-contact judgement by Ball On and ball metadata passed Debug/Release 72/72 |
 | RUL-008 | DONE | Foul reasons and max(4,relevant value) opponent award including no-contact/cue-pot/illegal-pot/free-ball rejection passed Debug/Release 73/73 |
-| RUL-009 | IN_PROGRESS | Adding same-shot multi-ball pot ordering and normal/foul/cue-pot combination classification |
-| RUL-010 | IN_PROGRESS | Adding continue-break versus foul/empty-pot turn switch classification |
-| RUL-008 | IN_PROGRESS | Adding foul reason/value calculation with minimum four and maximum relevant ball value |
-| RUL-008 | DONE | Foul reason/value calculation with minimum four and maximum relevant ball value passed Debug/Release 73/73 |
 | RUL-009 | DONE | Same-shot multi-red/color/cue-pot legal and foul classification with event order passed Debug/Release 74/74 |
 | RUL-010 | DONE | Continue-break, legal miss, foul and cue-in-hand turn switching passed Debug/Release 75/75 |
 | RUL-011 | DONE | Own/highest-alternate/no-spot color respot and deterministic high-value multi-color ordering passed Debug/Release 76/76 |
 | RUL-012 | DONE | Yellow-through-black ordered removal, no-respot, wrong-sequence/miss result and final black completion passed Debug/Release 77/77 |
-| REP-004 | IN_PROGRESS | Adding versioned frame save with match/physics/definitions/shot history and process restart continuation |
-| RUL-012 | IN_PROGRESS | Adding ordered final-colors phase without respot and foul candidate on sequence error |
-| RUL-011 | IN_PROGRESS | Adding color respot priority and occupied-spot fallback result |
-| RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
-| RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
+| REP-004 | DONE | frame-v1 embeds game/bundle/match/physics/definitions/shot history; two-process continuation equals uninterrupted two shots; Debug/Release 78/78 |
+| RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
 
@@ -451,3 +444,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - EvaluateFinalColor 仅用于 RemainingReds=0/FinalColors，按黄绿棕蓝粉黑推进。合法进球加对应分值、彩球永久移除且不复位；最后黑球后进入 Finished。错碰、未进、母球进袋和非法多球进袋返回明确非法结果供 RUL-008/010 组合。
 - 测试覆盖完整黄到黑 27 分顺序、每次 BallOn 推进、最终 Finished、错序和未进；分数溢出/非法阶段事务性拒绝。该任务不决定平分重摆黑，留给 RUL-015。
 - Test-Current.ps1 -Run rul012-a0，Debug/Release 77/77，全部 exit 0。
+
+### REP-004 验收（2026-11-19）
+
+- FrameSave/snooker-frame-v1 保存游戏版本、完整 PhysicsBundle、MatchState v2、当前 PhysicsSnapshot v3、显式球定义和完整 shot-v2 历史；检查参数版本、球集合/物性、唯一母球、历史参数一致和资源上限。
+- snooker_frame --continue 从已静止存档规范化新杆 BeforeShot，运行统一服务，追加记录并原子输出新存档。CTest 先建非默认比分/当前球员存档，再用两个独立进程各继续一杆，最终与单进程连续两杆逐字节一致；关闭/重启不丢 MatchState。
+- 首次专项 CMake 脚本单行 if 语法失败；重试 1 发现第二杆初始阶段仍为 AfterShot；规范化为 BeforeShot 后专项通过。Test-Current.ps1 -Run rep004-final，Debug/Release 78/78，全部 exit 0。存档迁移仍属 REP-005。
