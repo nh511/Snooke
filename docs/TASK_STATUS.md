@@ -62,6 +62,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REP-003 | DONE | Sparse solver checkpoints, exact step/time/event seek, first collision/pot and fault checkpoint tests passed Debug/Release 68/68 |
 | RUL-002 | DONE | Read-only typed shot physics input validates metadata/events/pot transitions and cached result; real pot and corruption tests passed Debug/Release 69/69 |
 | RUL-005 | DONE | Match-v2 nomination fields, normal red/color scoring, real physical pot integration, overflow and v1 migration passed Debug/Release 70/70 |
+| RUL-006 | DONE | Cue-ball pot foul, ball-in-hand D placement, same-shot object-score suppression and invalid position/overlap rejection passed Debug/Release 71/71 |
+| RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
 | RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
 
 ## Execution Rules
@@ -394,3 +396,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - MatchState 升级为 v2，增加 NominationPending、FreeBallNominated、FreeBallType、RespottedBlack；v1 文本可读取并迁移。ColorAfterRed 必须先 NominateColor，红阶段正常红球得 1 分并转入待点名彩，末红后彩球按分值计分并生成复位列表。
 - EvaluateShot 只处理正常路径：要求物理事件输入已校验、首次接触等于 Ball On、母球未落袋、无犯规/FreeBall/最终彩球未实现状态；分数溢出、错误点名、错误阶段和状态输入事务性拒绝。
 - rules_scoring 既有显式事件测试，也用真实服务生成的碰球/落袋记录检查红球加分。首轮失败仅为连续彩球夹具在进入 FinalColors 后仍使用红后彩路径；修正为每个彩球独立的 ColorAfterRed 状态后，Test-Current.ps1 -Run rul005-a1 Debug/Release 70/70 全部通过。
+
+### RUL-006 验收（2026-11-19）
+
+- EvaluateCueBallPotted 从 ShotPhysicsResult 只读生成 Foul/CueBallInHand/SuppressObjectScoring 和同杆目标球列表，不计算 RUL-008 罚分，也不把母球当目标球得分。输入必须是真实一致的 Potted 事件/终态；缓存矛盾被拒绝。
+- PlaceCueBallInD 使用 TableDefinition 和显式 DLineX=-1.04、DCenterY=0、DRadius=0.292；检查半径高度、布面边界、D 区和与已占球的重叠。目标类型错误、越界和重叠均拒绝。
+- Test-Current.ps1 -Run rul006-a2，Debug/Release 71/71。a0/a1 的失败是测试夹具把母球 Potted 列表顺序/缓存标记写矛盾，修正为真实事件顺序后通过；实现没有放宽物理或规则校验。
