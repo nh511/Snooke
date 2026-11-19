@@ -5,6 +5,7 @@
 #include <Snooker/Physics/Sleep.h>
 #include <Snooker/Shot/CueImpulse.h>
 #include <algorithm>
+#include <chrono>
 #include <iomanip>
 #include <tuple>
 
@@ -60,6 +61,10 @@ class Service final:public ISnookerPhysicsService
 {
 public:
     explicit Service(const PhysicsBundle& b):Bundle(b){GenerateTableGeometry(b.Table,b.Cushions,b.Pockets,b.Geometry,Geometry);}
+    Service(const Service& Other):Bundle(Other.Bundle),Geometry(Other.Geometry),State(Other.State),
+        Events(Other.Events),Fault(Other.Fault),Ready(Other.Ready) {}
+    Service(Service&&)=default;
+    Service& operator=(Service&&)=default;
     bool RestoreSnapshot(const PhysicsSnapshot& s,std::string* e) override
     {
         if(!s.IsValid(e))return false;
@@ -78,7 +83,7 @@ public:
         // Canonicalize paired state, not just balls, for input-order independence.
         for(std::size_t i=0;i<next.Balls.size();++i)for(std::size_t j=i+1;j<next.Balls.size();++j)
             if(next.Balls[j].Id<next.Balls[i].Id){std::swap(next.Balls[i],next.Balls[j]);std::swap(next.PocketStates[i],next.PocketStates[j]);}
-        State=std::move(next);Events.clear();Fault={};Ready=true;return true;
+        State=std::move(next);Events.clear();PerformanceSamples.clear();Fault={};Ready=true;return true;
     }
     bool BeginShot(const PhysicsSnapshot& snapshot,const ShotInput& input,std::string* e) override
     {
@@ -102,15 +107,16 @@ public:
         if(IsSettled() && State.Phase==ESnapshotPhase::AfterShot){output=PhysicsRunState::Settled;return true;}
         State.AccumulatorSeconds+=frame;
         for(unsigned budget=0;budget<1024 && State.AccumulatorSeconds+Bundle.FixedStep*1e-10>=Bundle.FixedStep;++budget) {
-            auto next=*this;std::string message;PhysicsFault detected;
+            auto next=*this;std::string message;PhysicsFault detected;PhysicsPerformanceSample performance;
             bool ok=CheckPhysicsSafety(State,Geometry,Bundle.Safety,0,detected,&message);
-            if(ok)ok=next.Fixed(&message);
+            if(ok)ok=next.Fixed(performance,&message);
             if(!ok) {
                 Fault=detected.Code!=PhysicsFaultCode::None?detected:next.Fault;
                 if(Fault.Code==PhysicsFaultCode::None){Fault.Code=message.find("budget")!=std::string::npos?PhysicsFaultCode::EventLoop:PhysicsFaultCode::SolverError;
                     Fault.Step=State.StepIndex+1;Fault.Time=Fault.Step*Bundle.FixedStep;Fault.Message=message;}
                 Fault.Snapshot=State;Fault.ReplayConfig=Bundle.Serialize();if(e)*e=message;output=PhysicsRunState::Faulted;return true;
             }
+            next.PerformanceSamples=std::move(PerformanceSamples);next.PerformanceSamples.push_back(performance);
             *this=std::move(next);
             if(IsSettled()){State.Phase=ESnapshotPhase::AfterShot;State.AccumulatorSeconds=0;output=PhysicsRunState::Settled;return true;}
         }
@@ -126,6 +132,7 @@ public:
         return true;
     }
     const std::vector<PhysicsEvent>& GetEvents() const override{return Events;}
+    const std::vector<PhysicsPerformanceSample>& GetPerformanceSamples() const override{return PerformanceSamples;}
     PhysicsSnapshot SaveSnapshot() const override{return State;}
     const PhysicsFault& GetFault() const override{return Fault;}
 private:
@@ -134,10 +141,12 @@ private:
         if(State.EventCount==std::numeric_limits<std::uint64_t>::max())return Fail(e,"event budget overflow");
         Events.push_back({State.EventCount++,State.StepIndex,time,kind,a,b,point,normal,impulse});return true;
     }
-    bool Fixed(std::string* e)
+    bool Fixed(PhysicsPerformanceSample& performance,std::string* e)
     {
+        const auto performanceStart=std::chrono::steady_clock::now();
+        performance={};
         if(State.StepIndex==std::numeric_limits<std::uint64_t>::max())return Fail(e,"step overflow");
-        const auto before=State.Balls;const auto startEvents=State.EventCount;
+        const auto before=State.Balls;const auto startEvents=State.EventCount;const auto startEventIndex=Events.size();
         const auto time0=State.SimulationTimeSeconds;
         ++State.StepIndex;const Seconds dt=Bundle.FixedStep/Bundle.Substeps;
         for(unsigned sub=0;sub<Bundle.Substeps;++sub) {
@@ -150,6 +159,7 @@ private:
             Seconds remaining=dt,elapsed=0;
             for(unsigned iteration=0;remaining>0;++iteration) {
                 if(iteration>Bundle.Safety.MaxEventsPerStep || State.EventCount-startEvents>Bundle.Safety.MaxEventsPerStep)return Fail(e,"collision event budget exceeded");
+                const auto searchStart=std::chrono::steady_clock::now();
                 Candidate best;best.Time=remaining;bool found=false;
                 auto offer=[&](Candidate c){
                     if(c.Time<0 || c.Time>remaining)return;
@@ -185,11 +195,14 @@ private:
                         }
                     }
                 }
+                performance.SearchNanoseconds+=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now()-searchStart).count());
                 const auto travel=found?best.Time:remaining;
                 for(std::size_t i=0;i<State.Balls.size();++i)if(Active(State.PocketStates[i]))
                     State.Balls[i].PositionMeters+=State.Balls[i].LinearVelocityMetersPerSecond*travel;
                 remaining=std::max(0.0,remaining-travel);elapsed+=travel;if(!found)break;
                 auto& b=State.Balls[best.A];auto& pstate=State.PocketStates[best.A];const Seconds now=time0+sub*dt+elapsed;
+                const auto resolutionStart=std::chrono::steady_clock::now();
                 if(best.Type==0) {
                     BallCollisionResponse response;if(!ResolveBallContact(b,State.Balls[best.B],Bundle.BallCollision,response,e))return false;
                     if(Cloth(pstate))b.LinearVelocityMetersPerSecond.Z=0;
@@ -234,6 +247,14 @@ private:
                         } else b.PositionMeters+=contact.Normal*1e-10;
                     }
                 }
+                const auto resolutionNanoseconds=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                    std::chrono::steady_clock::now()-resolutionStart).count());
+                if(best.Type==0)performance.BallBallNanoseconds+=resolutionNanoseconds;
+                else if(best.Type==1 && Geometry.Segments[best.B].Feature==TableFeature::PocketJaw)performance.JawNanoseconds+=resolutionNanoseconds;
+                else if(best.Type==1)performance.CushionNanoseconds+=resolutionNanoseconds;
+                else if(best.Type==2)performance.PocketContactNanoseconds+=resolutionNanoseconds;
+                else if(best.Type==3)performance.MouthEnteredNanoseconds+=resolutionNanoseconds;
+                else if(best.Type==4)performance.RecoveredToClothNanoseconds+=resolutionNanoseconds;
             }
         }
         State.SimulationTimeSeconds=State.StepIndex*Bundle.FixedStep;
@@ -245,10 +266,29 @@ private:
         }
         if(IsSettled() && !Emit(PhysicsEventKind::ShotSettled,0,0,{},{},0,State.SimulationTimeSeconds,e))return false;
         if(!CheckPhysicsSafety(State,Geometry,Bundle.Safety,State.EventCount-startEvents,Fault,e))return false;
+        performance.Step=State.StepIndex;performance.Time=State.SimulationTimeSeconds;
+        performance.ElapsedNanoseconds=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now()-performanceStart).count());
+        performance.TotalEvents=static_cast<std::uint32_t>(Events.size()-startEventIndex);
+        for(std::size_t i=startEventIndex;i<Events.size();++i) {
+            switch(Events[i].Kind) {
+            case PhysicsEventKind::BallBall: ++performance.BallBall; break;
+            case PhysicsEventKind::Cushion: ++performance.Cushion; break;
+            case PhysicsEventKind::Jaw: ++performance.Jaw; break;
+            case PhysicsEventKind::PocketContact: ++performance.PocketContact; break;
+            case PhysicsEventKind::MouthEntered: ++performance.MouthEntered; break;
+            case PhysicsEventKind::Potted: ++performance.Potted; break;
+            case PhysicsEventKind::RecoveredToCloth: ++performance.RecoveredToCloth; break;
+            case PhysicsEventKind::BallSettled: ++performance.BallSettled; break;
+            case PhysicsEventKind::ShotSettled: ++performance.ShotSettled; break;
+            case PhysicsEventKind::CueStrike: break;
+            }
+        }
         return true;
     }
     PhysicsBundle Bundle;TableGeometry Geometry;PhysicsSnapshot State;
-    std::vector<PhysicsEvent> Events;PhysicsFault Fault;bool Ready=false;
+    std::vector<PhysicsEvent> Events;std::vector<PhysicsPerformanceSample> PerformanceSamples;
+    PhysicsFault Fault;bool Ready=false;
 };
 }
 std::unique_ptr<ISnookerPhysicsService> CreatePhysicsService(const PhysicsBundle& bundle,std::string* e)

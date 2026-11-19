@@ -34,6 +34,7 @@ add_library(PhysicsCore STATIC
     PhysicsCore/src/Replay/ShotReplay.cpp
     PhysicsCore/src/Replay/ReplayController.cpp
     PhysicsCore/src/Replay/CollisionLog.cpp
+    PhysicsCore/src/Validation/DebugOptions.cpp
     PhysicsCore/src/Shot/CueProfile.cpp
     PhysicsCore/src/Shot/CueImpulse.cpp
     PhysicsCore/src/Shot/ShotInput.cpp)
@@ -69,10 +70,15 @@ add_executable(snooker_migrate tools/migrate.cpp)
 add_executable(snooker_fault_package tools/fault_package.cpp)
 add_executable(snooker_stability tools/stability.cpp)
 target_link_libraries(snooker_stability PRIVATE PhysicsCore)
+add_executable(snooker_physics_lab tools/physics_lab.cpp)
+target_link_libraries(snooker_physics_lab PRIVATE PhysicsCore)
+add_executable(snooker_performance tools/performance.cpp)
+target_link_libraries(snooker_performance PRIVATE PhysicsCore)
 if(WIN32)
     target_link_libraries(snooker_stability PRIVATE Psapi)
 endif()
 add_dependencies(Tools snooker_stability)
+add_dependencies(Tools snooker_physics_lab snooker_performance)
 target_link_libraries(snooker_fault_package PRIVATE PhysicsCore)
 add_dependencies(Tools snooker_fault_package)
 target_link_libraries(snooker_migrate PRIVATE RulesCore)
@@ -93,6 +99,21 @@ add_dependencies(Tools snooker_pocket_bundle)
 add_executable(snooker_core_info tools/core_info.cpp)
 target_link_libraries(snooker_core_info PRIVATE PhysicsCore RulesCore)
 enable_testing()
+add_executable(snooker_test_debug_options tests/debug_options.cpp)
+target_link_libraries(snooker_test_debug_options PRIVATE PhysicsCore)
+add_test(NAME core_debug_options COMMAND snooker_test_debug_options)
+add_test(NAME physics_lab_scenarios COMMAND "${CMAKE_COMMAND}"
+    "-DLAB=$<TARGET_FILE:snooker_physics_lab>" "-DSIMULATE=$<TARGET_FILE:snooker_simulate>" "-DNODE=${NODE_EXECUTABLE}"
+    "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/physics_lab.cmake")
+set_tests_properties(physics_lab_scenarios PROPERTIES TIMEOUT 30)
+add_test(NAME physics_performance_samples COMMAND "${CMAKE_COMMAND}"
+    "-DPERFORMANCE=$<TARGET_FILE:snooker_performance>" "-DNODE=${NODE_EXECUTABLE}"
+    "-DSOURCE=${CMAKE_CURRENT_SOURCE_DIR}" "-DOUTPUT=${CMAKE_CURRENT_BINARY_DIR}" "-DCONFIG=$<CONFIG>"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/tests/performance.cmake")
+set_tests_properties(physics_performance_samples PROPERTIES TIMEOUT 120)
+add_test(NAME measurement_record_template COMMAND "${NODE_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests/measurement-template.cjs" "${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(snooker_test_ai_state_query tests/ai_state_query.cpp)
 target_link_libraries(snooker_test_ai_state_query PRIVATE AICore)
 add_test(NAME ai_state_query COMMAND snooker_test_ai_state_query "${CMAKE_CURRENT_SOURCE_DIR}/data/table-opening.snooker" "${CMAKE_CURRENT_SOURCE_DIR}/data/opening-layout.txt")

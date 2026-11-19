@@ -1,0 +1,2 @@
+measurement_id,measured_at_utc,operator,location,table_id,physics_parameter_version,quantity,value,unit,uncertainty,method,source_file,notes
+table-YYYYMMDD-001,YYYY-MM-DDTHH:MM:SSZ,operator,location,table-id,snooker-physics-bundle-v2,table_length,,m,,steel-tape,raw/table-length.jpg,replace-example-values

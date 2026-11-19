@@ -1,0 +1,13 @@
+schema=snooker-performance-v1
+parameter_version=six-pocket-engineering-v2
+fixed_steps=902
+wall_time_ns=56111600
+solver_time_ns=35175500
+search_time_ns=26276800
+ball_ball_time_ns=1800
+cushion_time_ns=0
+jaw_time_ns=0
+pocket_contact_time_ns=0
+mouth_entered_time_ns=0
+recovered_to_cloth_time_ns=0
+events=4

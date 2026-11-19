@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const root=process.argv[2];
+const document=fs.readFileSync(path.join(root,'docs/MEASUREMENT_RECORD_TEMPLATE.md'),'utf8');
+const lines=fs.readFileSync(path.join(root,'data/validation/measurement-record.template.csv'),'utf8').trim().split(/\r?\n/);
+const header='measurement_id,measured_at_utc,operator,location,table_id,physics_parameter_version,quantity,value,unit,uncertainty,method,source_file,notes';
+assert.equal(lines[0],header);assert.equal(lines.length,2);assert.equal(lines[1].split(',').length,13);
+for(const required of ['measurement_id','physics_parameter_version','uncertainty','source_file'])assert(document.includes(required));
+assert(lines[1].includes('snooker-physics-bundle-v2'));
+console.log('PASS measurement template identity, parameter version, units, uncertainty and source linkage');

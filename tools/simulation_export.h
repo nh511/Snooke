@@ -1,5 +1,6 @@
 #pragma once
 #include <Snooker/Replay/PhysicsShotRecord.h>
+#include <Snooker/Validation/DebugOptions.h>
 #include <iomanip>
 #include <ostream>
 
@@ -56,6 +57,17 @@ inline std::string Result(const Snooker::PhysicsShotRecord& record,const Snooker
         Vector(s,p.Definition.Center);s<<",\"opening\":"<<p.Definition.Opening<<'}';
     }
     s<<"]}}\n";return s.str();
+}
+inline std::string Debug(const Snooker::DebugOptions& options)
+{
+    std::ostringstream s;s<<"{\"schema\":\"snooker-debug-v1\",\"mask\":"<<options.Mask<<",\"enabled\":[";
+    bool first=true;
+    for(const auto flag:{Snooker::DebugFlag::Trajectory,Snooker::DebugFlag::CollisionPoints,
+                         Snooker::DebugFlag::ContactNormals,Snooker::DebugFlag::SleepingState,
+                         Snooker::DebugFlag::PhysicsStepCount}) if(options.Enabled(flag)) {
+        if(!first)s<<',';s<<Quote(options.Name(flag));first=false;
+    }
+    s<<"],\"serialized\":"<<Quote(options.Serialize())<<"}\n";return s.str();
 }
 inline void CsvSample(std::ostream& s,const Snooker::PhysicsSnapshot& snapshot)
 {

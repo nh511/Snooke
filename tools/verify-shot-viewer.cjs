@@ -50,6 +50,9 @@ async function main(){
     const json=fs.readFileSync(path.join(dir,'result.json'),'utf8');
     await evaluate('loadShotData('+JSON.stringify(json)+','+JSON.stringify(csv)+')');
     assert.equal(await evaluate('shotViewerState().balls'),22);
+    await evaluate("document.getElementById('view').value='world';for(const id of ['vectors','normals','spin','sleeping']){const e=document.getElementById(id);e.checked=true;e.dispatchEvent(new Event('change'));}");
+    assert.equal(await evaluate("document.getElementById('view').value"),'world');
+    assert.match(await evaluate("document.getElementById('timeValue').textContent"),/ s$/);
     const events=JSON.parse(json).events;
     const collision=events.findIndex(e=>e.kind===1);assert(collision>=0);
     await evaluate("document.getElementById('events').value="+collision+";document.getElementById('events').dispatchEvent(new Event('change'))");
@@ -74,8 +77,8 @@ async function main(){
     const mobile=await command('Page.captureScreenshot',{format:'png'});
     fs.writeFileSync(path.join(evidence,'mobile.png'),Buffer.from(mobile.data,'base64'));
     assert.deepEqual(errors,[]);
-    fs.writeFileSync(path.join(evidence,'result.json'),JSON.stringify({end,colors,errors,desktop:'1280x800',mobile:'390x844'},null,2));
-    console.log('PASS real Chrome multi-ball load, events, canvas pixels, previous/next/play, desktop/mobile; '+evidence);
+    fs.writeFileSync(path.join(evidence,'result.json'),JSON.stringify({end,colors,errors,view:'world',overlays:['vectors','normals','spin','sleeping'],desktop:'1280x800',mobile:'390x844'},null,2));
+    console.log('PASS real Chrome multi-ball load, top/world controls, overlays, events, canvas pixels, previous/next/play, desktop/mobile; '+evidence);
   }finally{
     if(socket)socket.close();
     child.kill();

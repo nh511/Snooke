@@ -1,5 +1,18 @@
 # Validation Archive
 
+## 2026-11-19 独立核心补充任务
+
+- `FND-008`、`VAL-001`、`VAL-002`、`REL-001` 的独立部分已推进到 REVIEW；`VAL-010` 已完成。
+- `core-five-final3`：configure、Debug build/test、Release build/test 全部 exit 0，Debug/Release 各 94/94。物理实验测试会实际运行四个预设并验证 BallSettled、BallBall、Cushion、MouthEntered/PocketContact/Potted 事件。证据：[core-five-exit-codes.txt](evidence/core-five-exit-codes.txt)。
+- 性能专项使用真实两球碰撞记录逐步/整杆/搜索/碰撞类型耗时，Release 样例包含非零 `ball_ball_time_ns`。摘要：[physics-performance-summary.txt](evidence/physics-performance-summary.txt)。
+- 2D 查看器使用真实 22 球数据验证 World 投影、速度、角速度、接触法线、睡眠状态、事件跳转和时间轴；桌面/手机无横向溢出，1172 种画布采样颜色，无 JavaScript 异常。
+
+![扩展查看器桌面](evidence/screenshots/shot-viewer-world-desktop.png)
+
+![扩展查看器手机](evidence/screenshots/shot-viewer-world-mobile.png)
+
+Chrome/CDP 结果：[shot-viewer-world-result.json](evidence/shot-viewer-world-result.json)。UE Developer Settings、Map_PhysicsLab、3D 世界调试组件和 Unreal Insights 仍需 Unreal Engine 5.8.4 环境。
+
 归档日期：2026-11-19
 
 本文件是 `build-evidence/` 的精简长期摘要。它保留重要验收结论、关键失败修复、稳定性数据和浏览器截图索引，不保留编译中间文件、`.obj`、`.pdb`、`.exe` 或完整源码副本。

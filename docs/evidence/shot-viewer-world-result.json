@@ -1,0 +1,14 @@
+{
+  "end": 10601,
+  "colors": 1172,
+  "errors": [],
+  "view": "world",
+  "overlays": [
+    "vectors",
+    "normals",
+    "spin",
+    "sleeping"
+  ],
+  "desktop": "1280x800",
+  "mobile": "390x844"
+}

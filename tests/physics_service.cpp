@@ -31,9 +31,13 @@ int main(int argc,char** argv)
     for(const auto& e:service->GetEvents())if(e.Kind==PhysicsEventKind::BallBall)++hits;
     CHECK(hits>=1);CHECK(service->GetEvents().back().Kind==PhysicsEventKind::ShotSettled);
     const auto final=service->SaveSnapshot().Serialize();const auto eventCount=service->GetEvents().size();
+    const auto performanceCount=service->GetPerformanceSamples().size();
+    CHECK(performanceCount==service->SaveSnapshot().StepIndex);
     std::string referenceEvents;for(const auto& e:service->GetEvents())referenceEvents+=e.Serialize()+"\n";
     CHECK(!service->Step(-1,run,&error));CHECK(service->SaveSnapshot().Serialize()==final);
+    CHECK(service->GetPerformanceSamples().size()==performanceCount);
     CHECK(service->Step(1,run,&error));CHECK(service->GetEvents().size()==eventCount);
+    CHECK(service->GetPerformanceSamples().size()==performanceCount);
     // Render scheduling changes neither the physics events nor final bytes.
     for(double fps:{30.,60.,120.,144.}) {
         CHECK(service->BeginShot(s,input,&error));

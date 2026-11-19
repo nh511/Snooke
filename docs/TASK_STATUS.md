@@ -12,6 +12,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | FND-005 | DONE | SI/basis conversion specification and standalone tests passed; real UE wrappers deferred to COR-008 |
 | FND-006 | REVIEW | Core category/filter/file sink tests passed; real UE log forwarding remains unvalidated |
 | FND-007 | REVIEW | Independent CTest and nonzero failure exit passed; UE Automation reserved but not run |
+| FND-008 | REVIEW | Standalone DebugOptions and CLI/debug.json toggle all five categories; UE Developer Settings/console variables/3D drawing pending UE5 |
 | COR-001 | DONE | Public math headers in PhysicsCore/include/Snooker/Math; Debug/Release CTest 5/5 |
 | COR-002 | DONE | Four standalone targets build separately; clean-copy Debug/Release CTest 7/7 |
 | COR-003 | DONE | snooker_validation loads parameters and snapshot; empty-state/math tests passed in Debug/Release |
@@ -51,6 +52,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | PHY-020 | DONE | Eight fault codes, checkpoint/diagnostic separation, per-step event budget, frozen failed step and independent speed/timeout/event-loop fault-file replay passed; Debug/Release 54/54 |
 | PHY-021 | DONE | Unified service/CLI, closed six-pocket boundary, multi-contact scheduling, 22-ball opening/training pot and mid-shot continuation passed; clean-copy Debug/Release 56/56 |
 | REP-001 | DONE | shot-v2 embeds bundle/input/initial/final/events; real 22-ball record file round trip and malformed/order/reference/version rejection passed Debug/Release 56/56 |
+| VAL-001 | REVIEW | CLI physics lab generates single-ball, collision, cushion and pocket snapshots/inputs; UE Map_PhysicsLab pending UE5 |
+| VAL-002 | REVIEW | 2D inspector supports top/world projections, paths, velocity/angular vectors, contacts/normals, sleeping and timeline; UE 3D component pending UE5 |
 | VAL-003 | DONE | Fixed-step multi-ball CSV and JSON snapshots/parameters/events/geometry independently parsed by Node; Debug/Release 56/56 |
 | VAL-004 | DONE | Center-strike 476-row short baseline, explicit speed perturbation and first differing step/ball/field report passed Debug/Release 57/57 |
 | VAL-009 | DONE | Exact/tolerant trajectory, event and final-state comparison with first-field reports; contract tests and cross-config 22-ball/center outputs passed; Debug/Release 58/58 |
@@ -59,6 +62,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-006 | DONE | Left/right cue offsets produce mirrored nonzero cushion deflection and axial spin; baselines/replay passed Debug/Release 62/62 |
 | VAL-007 | DONE | One/two-rail, touching-rail and spin traces plus 30/60/120/144 FPS exact event/final/replay parity passed Debug/Release 66/66 |
 | VAL-008 | DONE | Entry/jaw/mouth-stop/recovery/capture fixtures assert pot/no-pot and exact midpoint restore; Debug/Release 67/67 |
+| VAL-010 | DONE | Measurement Markdown/CSV templates require identity, environment, units, uncertainty, source files and PhysicsBundle version linkage |
 | REP-003 | DONE | Sparse solver checkpoints, exact step/time/event seek, first collision/pot and fault checkpoint tests passed Debug/Release 68/68 |
 | RUL-002 | DONE | Read-only typed shot physics input validates metadata/events/pot transitions and cached result; real pot and corruption tests passed Debug/Release 69/69 |
 | RUL-005 | DONE | Match-v2 nomination fields, normal red/color scoring, real physical pot integration, overflow and v1 migration passed Debug/Release 70/70 |
@@ -74,6 +78,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-013 | DONE | Ball-only two-edge snookered query, offer/nomination, Ball On value/respot and free-ball snooker restriction passed Debug/Release 80/80 |
 | RUL-014 | DONE | Match/practice Miss policy, both-edge clear path, snookers-needed suppression and current/restore choices passed Debug/Release 81/81 |
 | REP-005 | DONE | Explicit Match v1/Snapshot v2 migration, current frame/shot inspection and incompatible legacy/future reports passed Debug/Release 82/82 |
+| REL-001 | REVIEW | Per-step/shot/search and collision-type timings plus counts export to CSV/summary; Unreal Insights and target hardware pending UE5 |
 | REL-004 | DONE | Standalone fault package with checkpoint/bundle/input/log/manifest reproduces same fault from package only; Debug/Release 83/83 |
 | REL-002 | DONE | 50-shot dual-config and 2000-shot Release deterministic stability passed; 0 faults, <1 MiB growth, no hang/unhandled exception |
 | REL-006 | DONE | Server-authoritative shot/input/hash/resync/rollback/version-rejection design and automated content contract passed Debug/Release 85/85 |
@@ -544,3 +549,18 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 初版 18 候选 Debug 太慢，缩为代表性 6 候选；完整 18 候选枚举仍由 AIC-004 验收。Hard 零标准差最初触发 Debug 断言等待，改为零误差不采样。Test-Current.ps1 -Run aic005-final Debug/Release 90/90 全部通过。
 - 用户反馈 `snooker_test_weighted_ai.exe` 的 Microsoft Visual C++ Debug Assertion：`normal_distribution` invalid sigma。根因是 Hard 的 `ErrorRadians=0` 仍构造了零标准差正态分布；现改为 `ErrorRadians>0` 才创建/采样分布，Hard 直接使用零误差。清理重建专项通过，aic005-popup-fix-final Debug/Release 90/90；截图中的旧 Debug 二进制需重新构建后才包含修复。
 - 目标完成数已达到 65/121；剩余 REVIEW=10、BLOCKED=2（UE）、TODO=44。后续 UE 未安装时仍可选择推进部分任务，但不在本轮 36 项承诺范围。
+### 独立核心任务补充验收（2026-11-19）
+
+本轮在未安装 UE5 的条件下推进以下五项任务。独立部分均已实现并有 CTest/Node 验证；含 UE5 的原始验收范围不被虚报为完成。
+
+| 任务 | 独立交付 | 当前状态 |
+|---|---|---|
+| FND-008 | `DebugOptions`、`--debug=`、`debug.json`，支持 trajectory、collision-points、contact-normals、sleeping、physics-steps、all、none | REVIEW：UE Developer Settings/Console Variable/3D 绘制待 UE5 |
+| VAL-001 | `snooker_physics_lab`，生成 single-ball、ball-collision、cushion、pocket 四类场景快照和输入 | REVIEW：UE `Map_PhysicsLab` 待 UE5 |
+| VAL-002 | 2D 查看器增加 Top/World 投影、速度/角速度向量、接触法线、睡眠状态和时间轴信息 | REVIEW：UE 调试绘制组件和 3D 世界视图待 UE5 |
+| VAL-010 | `MEASUREMENT_RECORD_TEMPLATE.md` 和 `measurement-record.template.csv`，每条记录强制关联 PhysicsBundle 版本 | DONE |
+| REL-001 | `GetPerformanceSamples()`、`snooker_performance`、逐步/整杆/搜索/碰撞类型耗时 CSV 和摘要报告 | REVIEW：Unreal Insights/目标硬件采样待 UE5 |
+
+验证：`Test-Current.ps1 -Run core-five-final3` 的 configure、Debug build/test、Release build/test 均 exit 0，Debug/Release 各 94/94；`physics_lab_scenarios` 会真实运行四个预设并分别校验 BallSettled、BallBall、Cushion、MouthEntered/PocketContact/Potted 事件。性能测试使用真实两球碰撞，要求 `ball_ball_time_ns` 和 BallBall 次数非零。真实 `snooker_simulate --debug=...` 生成 `debug.json` 通过。Chrome/CDP 使用真实 22 球数据验证 Top/World 切换、速度/角速度/法线/睡眠叠加、事件跳转、步进、播放和桌面/手机布局，1172 种采样颜色且无 JavaScript 异常。
+
+按唯一任务状态重新统计：DONE 66/121、REVIEW 14、BLOCKED 2、TODO 39。`FND-002`、`FND-003` 仍因 UE5 环境保持 BLOCKED。

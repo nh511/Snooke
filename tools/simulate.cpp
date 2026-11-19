@@ -20,7 +20,14 @@ int main(int argc,char** argv)
 {
     using namespace Snooker;
     try {
-        if(argc!=5)throw std::runtime_error("usage: snooker_simulate bundle snapshot shot-input output-directory");
+        if(argc<5)throw std::runtime_error("usage: snooker_simulate bundle snapshot shot-input output-directory [--debug=<flags>]");
+        DebugOptions debug;
+        for(int i=5;i<argc;++i) {
+            const std::string argument=argv[i];
+            if(argument.rfind("--debug=",0)!=0)throw std::runtime_error("unknown simulate option");
+            std::string error;
+            if(!DebugOptions::Parse(argument.substr(8),debug,&error))throw std::runtime_error(error);
+        }
         PhysicsBundle bundle;PhysicsSnapshot initial;ShotInput input;std::string error;
         if(!PhysicsBundle::Deserialize(Read(argv[1]),bundle,&error) || !PhysicsSnapshot::Deserialize(Read(argv[2]),initial,&error) ||
            !ShotInput::Deserialize(Read(argv[3]),input,&error))throw std::runtime_error(error);
@@ -54,6 +61,7 @@ int main(int argc,char** argv)
         TableGeometry geometry;if(!GenerateTableGeometry(bundle.Table,bundle.Cushions,bundle.Pockets,bundle.Geometry,geometry,&error))throw std::runtime_error(error);
         const auto json=SnookerExport::Result(record,geometry);
         Write(out/"result.json",json);Write(out/"viewer.json",json);
+        Write(out/"debug.json",SnookerExport::Debug(debug));
         std::cout<<"PASS settled step="<<service->SaveSnapshot().StepIndex<<" events="<<service->GetEvents().size()<<'\n';
         return 0;
     }catch(const std::exception& e){std::cerr<<"FAIL "<<e.what()<<'\n';return 1;}
