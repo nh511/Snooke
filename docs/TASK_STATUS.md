@@ -81,7 +81,7 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | AIC-002 | DONE | Ghost-ball legal target/pocket candidate, cut/risk fields and player-identical ShotInput conversion passed Debug/Release 87/87 |
 | AIC-003 | DONE | Candidate shared-service evaluation, shot-v2 record, scoring diagnostics, immutable query and exact replay passed Debug/Release 88/88 |
 | AIC-004 | DONE | Enumerated legal target/pocket/speed candidates, physically evaluated and selected a real scoring shot; Debug/Release 89/89 |
-| AIC-005 | IN_PROGRESS | Adding deterministic difficulty error and offense/safety/risk weighted explainable selection |
+| AIC-005 | DONE | Seeded difficulty error plus offense/safety/risk explainable weighting selects different real easy/hard shots; Debug/Release 90/90 |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -530,3 +530,10 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ChooseBasicScoringShot 枚举所有 active 合法 Ball On × 6 袋 × 0.6/1.0/1.4 m/s，共 18 候选；每个候选走 AIC-003 实际服务与重放，按合法落袋收益、母球/非法落袋惩罚和风险排序，固定 ID/袋口/速度决胜。
 - 简单母球-红球-中袋直线局面必须选择 Target=2，得到 LegalPotted>0、CueBallPotted=false、正得分，转换后的普通 ShotInput 通过相同球杆限制并可重放；查询哈希不变。
 - Test-Current.ps1 -Run aic004-a0，Debug/Release 89/89，全部 exit 0。AI 只输出候选/输入，不直接修改比分或球位。
+
+### AIC-005 验收（2026-11-19）
+
+- DifficultyProfile 提供 Easy/Medium/Hard：固定种子方向误差、进攻落袋、终态母球安全距离和候选风险权重。每项 WeightedAIResult 输出 offense/safety/risk/error/total 明细；零误差 Hard 不构造零标准差分布。
+- 难度测试使用 3 袋×2 速度共 6 个真实 AIC-003 评估，Easy 与 Hard 必须选择不同索引，Hard 合法落袋数不低于 Easy；相同种子 Easy 重复选择和明细完全一致，Hard 记录经 REP-002 精确重放。
+- 初版 18 候选 Debug 太慢，缩为代表性 6 候选；完整 18 候选枚举仍由 AIC-004 验收。Hard 零标准差最初触发 Debug 断言等待，改为零误差不采样。Test-Current.ps1 -Run aic005-final Debug/Release 90/90 全部通过。
+- 目标完成数已达到 65/121；剩余 REVIEW=10、BLOCKED=2（UE）、TODO=44。后续 UE 未安装时仍可选择推进部分任务，但不在本轮 36 项承诺范围。
