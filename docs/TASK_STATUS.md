@@ -72,7 +72,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REP-004 | DONE | frame-v1 embeds game/bundle/match/physics/definitions/shot history; two-process continuation equals uninterrupted two shots; Debug/Release 78/78 |
 | RUL-015 | DONE | Unequal-score winner, tied respotted black, black decision and deterministic next-frame opening passed Debug/Release 79/79 |
 | RUL-013 | DONE | Ball-only two-edge snookered query, offer/nomination, Ball On value/respot and free-ball snooker restriction passed Debug/Release 80/80 |
-| RUL-014 | IN_PROGRESS | Adding match/practice Miss policy, clear full-ball path and restore/replay choice |
+| RUL-014 | DONE | Match/practice Miss policy, both-edge clear path, snookers-needed suppression and current/restore choices passed Debug/Release 81/81 |
+| REP-005 | IN_PROGRESS | Adding explicit match-v1/snapshot-v2 migration and incompatible shot/future-version reports |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -465,3 +466,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - QuerySnookered 对每个 active Ball On 检查左右极限擦边路径，只考虑球体遮挡；所有目标两侧均被遮挡才是 Snookered。单侧遮挡不成立。Offer/Nominate 更新 MatchState v2 的 FreeBallAvailable/FreeBallNominated/FreeBallType。
 - 点名球首次接触合法时按 Ball On 分值计分；点名球进袋进入复位列表。未进袋时若仅由点名球造成对手斯诺克则犯规；FinalColors 粉球在台、仅粉黑特例允许。错误首次接触/非法进球/母球进袋明确犯规。
 - 首次专项卡死来自测试夹具给 Balls 追加黑球却漏增 PocketStates，越界写导致 Windows 崩溃等待；修正成配对状态并干净重建。Test-Current.ps1 -Run rul013-final，Debug/Release 80/80，全部 exit 0。遮挡模型只算球，不算库角，按计划限制。
+
+### RUL-014 验收（2026-11-19）
+
+- snooker-rules-v1 新增 match/practice 参数文件（Miss 开关、最低罚分、D 线/半径），解析使用经典区域和资源边界。比赛模式只有犯规首次接触、击球前至少一个目标左右完整路径都清晰、且击球方无需斯诺克追分时 Miss；练习模式不判。
+- MissPending 结果支持 PlayFromCurrent（下一位从当前球位）或 RestoreAndReplay（恢复击球前快照，由犯规方重打），清除待处理旗标且不修改输入快照。未实现三次 Miss 判负，按计划排除。
+- Test-Current.ps1 -Run rul014-a0，Debug/Release 81/81，全部 exit 0。可视遮挡只计算球体，不计算库角；比分可用分值按红/彩阶段上限保守计算。
