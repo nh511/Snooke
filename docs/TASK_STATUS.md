@@ -80,7 +80,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | AIC-001 | DONE | Immutable AI query for match/physics/definitions/cue/legal Ball On and stable state hash passed Debug/Release 86/86 |
 | AIC-002 | DONE | Ghost-ball legal target/pocket candidate, cut/risk fields and player-identical ShotInput conversion passed Debug/Release 87/87 |
 | AIC-003 | DONE | Candidate shared-service evaluation, shot-v2 record, scoring diagnostics, immutable query and exact replay passed Debug/Release 88/88 |
-| AIC-004 | IN_PROGRESS | Searching legal target/pocket/speed candidates and selecting a simple real scoring shot |
+| AIC-004 | DONE | Enumerated legal target/pocket/speed candidates, physically evaluated and selected a real scoring shot; Debug/Release 89/89 |
+| AIC-005 | IN_PROGRESS | Adding deterministic difficulty error and offense/safety/risk weighted explainable selection |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -523,3 +524,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - EvaluateCandidate 将 ShotCandidate 转为玩家同构 ShotInput，通过 CreatePhysicsService/BeginShot/Step 实际计算到静止，生成完整 PhysicsShotRecord；统计合法/总落袋、母球落袋、风险和解释性得分。
 - 每次评估调用 ReplayShot，要求完整记录逐字节一致；参数版本不符、物理故障或未静止失败且不覆盖原输出。评估前后 IAIStateQuery 哈希不变。
 - Test-Current.ps1 -Run aic003-a0，Debug/Release 88/88，全部 exit 0。测试使用真实两球靠中袋局面，不读取保存轨迹驱动物理。
+
+### AIC-004 验收（2026-11-19）
+
+- ChooseBasicScoringShot 枚举所有 active 合法 Ball On × 6 袋 × 0.6/1.0/1.4 m/s，共 18 候选；每个候选走 AIC-003 实际服务与重放，按合法落袋收益、母球/非法落袋惩罚和风险排序，固定 ID/袋口/速度决胜。
+- 简单母球-红球-中袋直线局面必须选择 Target=2，得到 LegalPotted>0、CueBallPotted=false、正得分，转换后的普通 ShotInput 通过相同球杆限制并可重放；查询哈希不变。
+- Test-Current.ps1 -Run aic004-a0，Debug/Release 89/89，全部 exit 0。AI 只输出候选/输入，不直接修改比分或球位。
