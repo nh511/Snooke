@@ -71,7 +71,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-012 | DONE | Yellow-through-black ordered removal, no-respot, wrong-sequence/miss result and final black completion passed Debug/Release 77/77 |
 | REP-004 | DONE | frame-v1 embeds game/bundle/match/physics/definitions/shot history; two-process continuation equals uninterrupted two shots; Debug/Release 78/78 |
 | RUL-015 | DONE | Unequal-score winner, tied respotted black, black decision and deterministic next-frame opening passed Debug/Release 79/79 |
-| RUL-013 | IN_PROGRESS | Adding snookered detection, nomination/value and free-ball no-snooker constraint |
+| RUL-013 | DONE | Ball-only two-edge snookered query, offer/nomination, Ball On value/respot and free-ball snooker restriction passed Debug/Release 80/80 |
+| RUL-014 | IN_PROGRESS | Adding match/practice Miss policy, clear full-ball path and restore/replay choice |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -458,3 +459,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ResolveFrameEnd：Finished 且分数不等给出 Winner；平分时按调用方显式 starter 进入 FinalColors/Black/RespottedBlack；重摆黑球后产生分差则 Finished。状态旗标清理并保持事务性。
 - StartNextFrame 要求已完成且非平分，复用 CreateFrameOpening，frame 编号加一，显式 Breaker，比分/旗标/球位归零；旧 frame 状态不修改，可由 FrameSave 历史回放。
 - Test-Current.ps1 -Run rul015-a0，Debug/Release 79/79，全部 exit 0。抽签/开球方由调用方传入，核心不使用随机数。
+
+### RUL-013 验收（2026-11-19）
+
+- QuerySnookered 对每个 active Ball On 检查左右极限擦边路径，只考虑球体遮挡；所有目标两侧均被遮挡才是 Snookered。单侧遮挡不成立。Offer/Nominate 更新 MatchState v2 的 FreeBallAvailable/FreeBallNominated/FreeBallType。
+- 点名球首次接触合法时按 Ball On 分值计分；点名球进袋进入复位列表。未进袋时若仅由点名球造成对手斯诺克则犯规；FinalColors 粉球在台、仅粉黑特例允许。错误首次接触/非法进球/母球进袋明确犯规。
+- 首次专项卡死来自测试夹具给 Balls 追加黑球却漏增 PocketStates，越界写导致 Windows 崩溃等待；修正成配对状态并干净重建。Test-Current.ps1 -Run rul013-final，Debug/Release 80/80，全部 exit 0。遮挡模型只算球，不算库角，按计划限制。
