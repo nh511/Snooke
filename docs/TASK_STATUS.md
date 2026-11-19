@@ -78,7 +78,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REL-002 | DONE | 50-shot dual-config and 2000-shot Release deterministic stability passed; 0 faults, <1 MiB growth, no hang/unhandled exception |
 | REL-006 | DONE | Server-authoritative shot/input/hash/resync/rollback/version-rejection design and automated content contract passed Debug/Release 85/85 |
 | AIC-001 | DONE | Immutable AI query for match/physics/definitions/cue/legal Ball On and stable state hash passed Debug/Release 86/86 |
-| AIC-002 | IN_PROGRESS | Adding ghost-ball target/pocket candidate and validated ShotInput conversion |
+| AIC-002 | DONE | Ghost-ball legal target/pocket candidate, cut/risk fields and player-identical ShotInput conversion passed Debug/Release 87/87 |
+| AIC-003 | IN_PROGRESS | Evaluating candidates through shared service and exact physical replay/event parity |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -509,3 +510,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 新增独立 AICore 静态库。IAIStateQuery 只读暴露 MatchState、PhysicsSnapshot、BallDefinition、CueProfile、BallOnQuery 和按 ID 球状态；不提供修改接口，AI 状态由构建时拷贝拥有。
 - 查询构建检查唯一母球、ID/物性匹配和合法 Ball On，生成包含规则/物理/球杆/定义的稳定 FNV 哈希。构建前后原始 Match/Physics 序列化字节不变；相同输入哈希相同，物性不一致拒绝。
 - Test-Current.ps1 -Run aic001-a0，Debug/Release 86/86，全部 exit 0。未接入 UE、未直接修改球状态。
+
+### AIC-002 验收（2026-11-19）
+
+- ShotCandidate 保存母球/目标球/袋口、单位出杆方向、Ghost Ball 球心、打点/偏移、速度、切角和风险。CreatePotCandidate 从目标到袋口反推接触球心，再从母球计算方向，只允许当前 Ball On。
+- ToShotInput 使用查询中的同一 CueProfile，设置相同 CueBallId/ProfileId/打点/速度并调用 ShotInput::ValidateFor；AI 不使用隐藏输入或直接改球。非法目标、袋口、负速度、退化方向事务性拒绝，查询哈希不变。
+- aic002-a0/a1 是直接头依赖遗漏（ShotInput、PhysicsBundle 别名）；补显式头后 Test-Current.ps1 -Run aic002-a2 Debug/Release 87/87 全部通过。
