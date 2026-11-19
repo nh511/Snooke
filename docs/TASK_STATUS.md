@@ -506,6 +506,13 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 预测仅用于瞄准/动画/可选球运动，回滚粒度一杆，恢复预杆快照并重演权威输入。资源/认证/重放攻击和故障包策略已写明；这是设计文档，不声称网络传输已实现。
 - network_sync_design CTest 检查关键协议约束。初始专项仅因检查短语大小写/措辞不匹配两次失败，修正测试契约后通过；Test-Current.ps1 -Run rel006-final Debug/Release 85/85 全部通过。
 
+### 阶段 3/整轮收敛记录（2026-11-19）
+
+- 阶段 3 已完成：RUL-002、RUL-005、RUL-006、RUL-007、RUL-008、RUL-009、RUL-010、RUL-011、RUL-012、RUL-013、RUL-014、RUL-015、REP-004、REP-005、REL-002、REL-004、REL-006、AIC-001、AIC-002、AIC-003、AIC-004、AIC-005，共 22 个本轮可推进任务；阶段 2 的 11 项已在此前完成。
+- 最终独立副本：Verify-Standalone.ps1 -Run stage3-n19，configure、Debug build/test、Release build/test 全部 exit 0，双配置 90/90；工作区没有 UE5，也没有提交 build/build-evidence。
+- 唯一任务状态统计：DONE 65/121、REVIEW 10、BLOCKED 2（FND-002/FND-003，缺 UE5）、TODO 44。REVIEW 主要是已完成独立部分但等待 UE DataAsset/插件/编辑器验收的任务；没有把 UE 任务伪标为 DONE。
+- 当前 36 项计划已经完成。后续若继续，优先处理规则扩展/规则回归或 REL-001 性能采样；UE 相关任务仍需 Unreal Engine 5.8.4 环境。
+
 ### AIC-001 验收（2026-11-19）
 
 - 新增独立 AICore 静态库。IAIStateQuery 只读暴露 MatchState、PhysicsSnapshot、BallDefinition、CueProfile、BallOnQuery 和按 ID 球状态；不提供修改接口，AI 状态由构建时拷贝拥有。
