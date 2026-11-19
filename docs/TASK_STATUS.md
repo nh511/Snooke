@@ -64,6 +64,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-005 | DONE | Match-v2 nomination fields, normal red/color scoring, real physical pot integration, overflow and v1 migration passed Debug/Release 70/70 |
 | RUL-006 | DONE | Cue-ball pot foul, ball-in-hand D placement, same-shot object-score suppression and invalid position/overlap rejection passed Debug/Release 71/71 |
 | RUL-007 | DONE | Explicit legal/wrong/no-contact first-contact judgement by Ball On and ball metadata passed Debug/Release 72/72 |
+| RUL-008 | DONE | Foul reasons and max(4,relevant value) opponent award including no-contact/cue-pot/illegal-pot/free-ball rejection passed Debug/Release 73/73 |
+| RUL-009 | IN_PROGRESS | Adding same-shot multi-ball pot ordering and normal/foul/cue-pot combination classification |
 | RUL-008 | IN_PROGRESS | Adding foul reason/value calculation with minimum four and maximum relevant ball value |
 | RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
 | RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
@@ -410,3 +412,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - FirstContactResult/EvaluateFirstContact 只读取 ShotPhysicsResult 和 MatchState：首次 BallBall 事件涉及母球时取另一球，按显式 BallDefinition 与当前 BallOn 匹配；无首次接触为 NoContact，类型不匹配为 WrongBall，二者均标为犯规候选。
 - 测试覆盖红阶段合法/错误/未接触、ColorAfterRed 彩球、未知球引用、进行中和 Finished 状态拒绝，失败不改变已有结果。该任务不计算罚分、不切换回合。
 - Test-Current.ps1 -Run rul007-a1，Debug/Release 72/72。a0 仅为测试错误使用不存在的 ShotPhysicsResult::Serialize，修正为保存结果字段后通过。
+
+### RUL-008 验收（2026-11-19）
+
+- FoulValueResult/CalculateFoulValue 输出原因、罚分、对手玩家和相关最高球分值。罚分为 `max(4, relevant value)`，相关值来自错误首次接触、母球落袋或非法目标球进袋；合法正常杆返回无犯规/零字段。
+- 覆盖无首次接触最低 4、错碰黑球 7、母球进袋最低 4、对手归属、Free Ball 尚未实现时明确拒绝、非法事件缓存和状态校验。RUL-008 不修改 MatchState，不实现回合切换或 Miss。
+- rul008-a0/a1/a2 的失败均是测试夹具：母球定义重复、未接触事件游标未同步、事件时间越过终态；最终将夹具改为合法事件序列后 `rul008-final` Debug/Release 73/73 全部通过。
