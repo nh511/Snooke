@@ -1,0 +1,5 @@
+configure.txt exit=0
+build-Debug.txt exit=0
+test-Debug.txt exit=0
+build-Release.txt exit=0
+test-Release.txt exit=0
