@@ -71,6 +71,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-008 | DONE | Foul reason/value calculation with minimum four and maximum relevant ball value passed Debug/Release 73/73 |
 | RUL-009 | DONE | Same-shot multi-red/color/cue-pot legal and foul classification with event order passed Debug/Release 74/74 |
 | RUL-010 | DONE | Continue-break, legal miss, foul and cue-in-hand turn switching passed Debug/Release 75/75 |
+| RUL-011 | DONE | Own/highest-alternate/no-spot color respot and deterministic high-value multi-color ordering passed Debug/Release 76/76 |
+| RUL-012 | IN_PROGRESS | Adding ordered final-colors phase without respot and foul candidate on sequence error |
 | RUL-011 | IN_PROGRESS | Adding color respot priority and occupied-spot fallback result |
 | RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
 | RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
@@ -435,3 +437,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ApplyTurnResult 对已完成的杆结果做单一职责回合更新：合法得分且 ContinueBreak 保持当前球员；合法未进球、犯规均切换；母球进袋把下一杆设为 CueBallInHand。ShotInProgress 清除。
 - 提供底层 TurnInput 及 ShotScoreResult+MultiBallShotResult 组合入口，检查玩家索引/状态一致；空犯规原因、未完成杆和不一致规则结果事务性拒绝。Free Ball/Miss 旗标由后续任务设置，不在此猜测。
 - Test-Current.ps1 -Run rul010-a0，Debug/Release 75/75，全部 exit 0。
+
+### RUL-011 验收（2026-11-19）
+
+- FindColorRespot 优先回本点；本点占用时按黑、粉、蓝、棕、绿、黄寻找最高分空点，返回 OwnSpot/AlternateSpot/NoSpotAvailable，不移动占位球。多彩球按高分到低分、同分 ID 顺序确定性处理并更新局部占位。
+- 测试覆盖本点、蓝球本点占用后回黑点、六点全占用、黑蓝同时复位、非法颜色/重复占位和事务性输出。替代点仅限现有显式球点；全占用返回可处理结果，不猜测沿纵向最近空位。
+- Test-Current.ps1 -Run rul011-a0，Debug/Release 76/76，全部 exit 0。实际放置到物理快照/规则替代点延伸由调用层处理。
