@@ -75,7 +75,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-014 | DONE | Match/practice Miss policy, both-edge clear path, snookers-needed suppression and current/restore choices passed Debug/Release 81/81 |
 | REP-005 | DONE | Explicit Match v1/Snapshot v2 migration, current frame/shot inspection and incompatible legacy/future reports passed Debug/Release 82/82 |
 | REL-004 | DONE | Standalone fault package with checkpoint/bundle/input/log/manifest reproduces same fault from package only; Debug/Release 83/83 |
-| REL-002 | IN_PROGRESS | Adding deterministic fixed/random long-run simulation and memory/fault/hang report |
+| REL-002 | DONE | 50-shot dual-config and 2000-shot Release deterministic stability passed; 0 faults, <1 MiB growth, no hang/unhandled exception |
+| REL-006 | IN_PROGRESS | Writing authoritative input/snapshot/hash/resync/version-rejection network sync design |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -486,3 +487,10 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - snooker_fault_package 输出 fault.txt、checkpoint.snapshot、physics.bundle、shot.input、fault.log、README.txt、manifest.txt；输出目录必须为空，所有文本二进制/LF 写入。fault-v2 保留有效检查点和参数包，输入用于杆级诊断。
 - CTest 在 core_physics_fault 生成真实 VelocityExplosion 后打包，逐字节比较 fault.txt，仅以包内文件为工作目录运行 snooker_fault_replay，要求同码同步复现；日志必须含 code/step。
 - rel004-a0 仅因工具遗漏直接 ShotInput 头编译失败；补头后 Test-Current.ps1 -Run rel004-a1 Debug/Release 83/83 全部通过。REL-004 是可复现故障包，不替代系统崩溃转储/UE Crash Reporter。
+
+### REL-002 验收（2026-11-19）
+
+- snooker_stability 使用固定种子交替固定中心杆/随机合法方向力度，每第 10 杆加入靠库入射，逐杆新建公共服务、运行到静止、检查 Fault=None，并汇总 FNV 结果哈希、耗时、工作集、最大步数/事件。
+- CTest stability_50：Debug 50 杆约 15.2 s、Release 约 1.28 s，均 0 故障、内存增长 0、相同 hash=11203345963539698158、最大 1098 步/4 事件。Test-Current.ps1 -Run rel002-final，双配置 84/84。
+- 计划要求的 Release 2000 杆：70.734 s，0 故障、无卡死/异常，内存从 4,202,496 到 5,050,368，增长 847,872 字节 <10 MiB，最大 1286 步/4 事件，hash=17146014793590329516；报告 build-evidence/stability-2000-release.json。
+- rel002-a0 编译失败（Windows max 宏/混合 auto）；a1 证据目录复用未执行；a2 模拟成功但 CMake 正则转义错误；改用 string(JSON) 后 final 通过。未放宽稳定性阈值。
