@@ -1,0 +1,8 @@
+#include <Snooker/AI/StateQuery.h>
+#include <Snooker/Rules/FrameOpening.h>
+#include <fstream>
+#include <iterator>
+#include <iostream>
+#define CHECK(x) do{if(!(x)){std::cerr<<"FAIL AI query "<<__LINE__<<": "<<#x<<"; "<<error<<'\n';return 1;}}while(false)
+std::string Read(const char*p){std::ifstream f(p);return {std::istreambuf_iterator<char>(f),{}};}
+int main(int argc,char**argv){using namespace Snooker;std::string error;CHECK(argc==3);TableDefinition table;OpeningLayout layout;CHECK(TableDefinition::Deserialize(Read(argv[1]),table,&error));CHECK(OpeningLayout::Deserialize(Read(argv[2]),layout,&error));BallDefinition p;p.Id=1;FrameOpening opening;CHECK(CreateFrameOpening(table,p,layout,"ai-v1",1.0/240,3,1,opening,&error));const auto match=opening.Match.Serialize(),physics=opening.Physics.Serialize();CueProfile cue;auto query=CreateAIStateQuery(opening.Match,opening.Physics,opening.Definitions,cue,&error);CHECK(query);CHECK(query->Match().CurrentPlayer==1&&query->Match().Scores[0]==0);CHECK(query->Physics().Balls.size()==22&&query->Definitions().size()==22);CHECK(query->BallOn().LegalChoices==std::vector<EBallType>{EBallType::Red});CHECK(query->FindBall(1)&&!query->FindBall(999));CHECK(query->StateHash()!=0);auto query2=CreateAIStateQuery(opening.Match,opening.Physics,opening.Definitions,cue,&error);CHECK(query2->StateHash()==query->StateHash());CHECK(opening.Match.Serialize()==match&&opening.Physics.Serialize()==physics);auto bad=opening.Definitions;bad[0].MassKg+=1;CHECK(!CreateAIStateQuery(opening.Match,opening.Physics,bad,cue,&error));CHECK(opening.Match.Serialize()==match&&opening.Physics.Serialize()==physics);std::cout<<"PASS immutable AI query, legal target, scores, ball/cue state and stable hash\n";}

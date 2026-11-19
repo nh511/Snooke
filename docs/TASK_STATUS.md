@@ -77,7 +77,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REL-004 | DONE | Standalone fault package with checkpoint/bundle/input/log/manifest reproduces same fault from package only; Debug/Release 83/83 |
 | REL-002 | DONE | 50-shot dual-config and 2000-shot Release deterministic stability passed; 0 faults, <1 MiB growth, no hang/unhandled exception |
 | REL-006 | DONE | Server-authoritative shot/input/hash/resync/rollback/version-rejection design and automated content contract passed Debug/Release 85/85 |
-| AIC-001 | IN_PROGRESS | Adding immutable AI match/physics/cue query snapshot and legal-target lookup |
+| AIC-001 | DONE | Immutable AI query for match/physics/definitions/cue/legal Ball On and stable state hash passed Debug/Release 86/86 |
+| AIC-002 | IN_PROGRESS | Adding ghost-ball target/pocket candidate and validated ShotInput conversion |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -502,3 +503,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - 每杆结束比较规范事件/终态哈希；首差异停止规则提交，重新核对版本并请求完整 MatchState、球定义、shot record 和整份后快照。禁止局部球位补丁，恢复失败或版本/hash 仍不一致则断线。
 - 预测仅用于瞄准/动画/可选球运动，回滚粒度一杆，恢复预杆快照并重演权威输入。资源/认证/重放攻击和故障包策略已写明；这是设计文档，不声称网络传输已实现。
 - network_sync_design CTest 检查关键协议约束。初始专项仅因检查短语大小写/措辞不匹配两次失败，修正测试契约后通过；Test-Current.ps1 -Run rel006-final Debug/Release 85/85 全部通过。
+
+### AIC-001 验收（2026-11-19）
+
+- 新增独立 AICore 静态库。IAIStateQuery 只读暴露 MatchState、PhysicsSnapshot、BallDefinition、CueProfile、BallOnQuery 和按 ID 球状态；不提供修改接口，AI 状态由构建时拷贝拥有。
+- 查询构建检查唯一母球、ID/物性匹配和合法 Ball On，生成包含规则/物理/球杆/定义的稳定 FNV 哈希。构建前后原始 Match/Physics 序列化字节不变；相同输入哈希相同，物性不一致拒绝。
+- Test-Current.ps1 -Run aic001-a0，Debug/Release 86/86，全部 exit 0。未接入 UE、未直接修改球状态。
