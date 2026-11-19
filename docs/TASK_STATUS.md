@@ -66,10 +66,12 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-007 | DONE | Explicit legal/wrong/no-contact first-contact judgement by Ball On and ball metadata passed Debug/Release 72/72 |
 | RUL-008 | DONE | Foul reasons and max(4,relevant value) opponent award including no-contact/cue-pot/illegal-pot/free-ball rejection passed Debug/Release 73/73 |
 | RUL-009 | IN_PROGRESS | Adding same-shot multi-ball pot ordering and normal/foul/cue-pot combination classification |
+| RUL-010 | IN_PROGRESS | Adding continue-break versus foul/empty-pot turn switch classification |
 | RUL-008 | IN_PROGRESS | Adding foul reason/value calculation with minimum four and maximum relevant ball value |
 | RUL-008 | DONE | Foul reason/value calculation with minimum four and maximum relevant ball value passed Debug/Release 73/73 |
 | RUL-009 | DONE | Same-shot multi-red/color/cue-pot legal and foul classification with event order passed Debug/Release 74/74 |
-| RUL-010 | IN_PROGRESS | Adding continue-break versus foul/empty-pot turn switch classification |
+| RUL-010 | DONE | Continue-break, legal miss, foul and cue-in-hand turn switching passed Debug/Release 75/75 |
+| RUL-011 | IN_PROGRESS | Adding color respot priority and occupied-spot fallback result |
 | RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
 | RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
 
@@ -427,3 +429,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - MultiBallShotResult 保留物理 `PottedOrder`，按阶段和 Ball On 分类 `ScoringBalls`/`IllegalBalls`；多红在红阶段可正常计分，红夹彩、红后多彩、错碰和母球进袋均抑制正常计分并标记犯规原因。
 - 测试覆盖同杆多球的合法、混合非法、多个彩球、母球与目标球同时进袋、错误首次接触，且验证事件时序、终态袋口状态和无引擎依赖。RUL-009 不修改比分/回合，RUL-010 负责回合切换。
 - rul009-a0 编译夹具失败（CHECK 宏解析 vector initializer 逗号）；a1 修复宏夹具后发现母球事件时间早于目标球；rul009-final 修正为合法时序后 Debug/Release 74/74 全部通过。
+
+### RUL-010 验收（2026-11-19）
+
+- ApplyTurnResult 对已完成的杆结果做单一职责回合更新：合法得分且 ContinueBreak 保持当前球员；合法未进球、犯规均切换；母球进袋把下一杆设为 CueBallInHand。ShotInProgress 清除。
+- 提供底层 TurnInput 及 ShotScoreResult+MultiBallShotResult 组合入口，检查玩家索引/状态一致；空犯规原因、未完成杆和不一致规则结果事务性拒绝。Free Ball/Miss 旗标由后续任务设置，不在此猜测。
+- Test-Current.ps1 -Run rul010-a0，Debug/Release 75/75，全部 exit 0。
