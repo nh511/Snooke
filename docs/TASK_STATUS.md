@@ -74,7 +74,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-013 | DONE | Ball-only two-edge snookered query, offer/nomination, Ball On value/respot and free-ball snooker restriction passed Debug/Release 80/80 |
 | RUL-014 | DONE | Match/practice Miss policy, both-edge clear path, snookers-needed suppression and current/restore choices passed Debug/Release 81/81 |
 | REP-005 | DONE | Explicit Match v1/Snapshot v2 migration, current frame/shot inspection and incompatible legacy/future reports passed Debug/Release 82/82 |
-| REL-004 | IN_PROGRESS | Packaging fault, checkpoint, parameters, input, log and reproduction command into a standalone directory |
+| REL-004 | DONE | Standalone fault package with checkpoint/bundle/input/log/manifest reproduces same fault from package only; Debug/Release 83/83 |
+| REL-002 | IN_PROGRESS | Adding deterministic fixed/random long-run simulation and memory/fault/hang report |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -479,3 +480,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - MigrationReport 提供 Current/Migrated/RecognizedIncompatible/UnsupportedFuture/Invalid。MatchState v1 迁移到 v2 默认新旗标；PhysicsSnapshot v2 迁移到 v3 默认全 OnCloth、EventCount=0。
 - legacy shot-v1 仅识别并明确报告“缺完整 PhysicsBundle，不能物理重放”，不伪造参数；shot-v2/frame-v1 可检查当前格式。未知未来 match/snapshot/shot/frame 版本明确拒绝。
 - snooker_migrate 提供命令行入口。Test-Current.ps1 -Run rep005-a0，Debug/Release 82/82，全部 exit 0。迁移失败不改变目标，Match/快照兼容样例来自实际旧格式文件。
+
+### REL-004 验收（2026-11-19）
+
+- snooker_fault_package 输出 fault.txt、checkpoint.snapshot、physics.bundle、shot.input、fault.log、README.txt、manifest.txt；输出目录必须为空，所有文本二进制/LF 写入。fault-v2 保留有效检查点和参数包，输入用于杆级诊断。
+- CTest 在 core_physics_fault 生成真实 VelocityExplosion 后打包，逐字节比较 fault.txt，仅以包内文件为工作目录运行 snooker_fault_replay，要求同码同步复现；日志必须含 code/step。
+- rel004-a0 仅因工具遗漏直接 ShotInput 头编译失败；补头后 Test-Current.ps1 -Run rel004-a1 Debug/Release 83/83 全部通过。REL-004 是可复现故障包，不替代系统崩溃转储/UE Crash Reporter。
