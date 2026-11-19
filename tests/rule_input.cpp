@@ -1,4 +1,5 @@
 #include <Snooker/Rules/ShotPhysicsResult.h>
+#include <Snooker/Rules/ShotScoring.h>
 #include <fstream>
 #include <iterator>
 #include <iostream>
@@ -33,5 +34,7 @@ int main(int argc,char** argv)
     CHECK(pot.IsValid(&error));CHECK(BuildShotRuleInput(pot,definitions,result,&error));CHECK(result.FirstContact==2);
     CHECK(std::find(result.Potted.begin(),result.Potted.end(),2)!=result.Potted.end());
     CHECK(!result.CueBallPotted);CHECK(result.IsValid(&error));
+    MatchState match;match.RemainingReds=1;ShotScoreResult score;
+    CHECK(EvaluateShot(match,result,score,&error));CHECK(score.Points==1 && score.State.Scores[0]==1 && score.ContinueBreak);
     std::cout<<"PASS read-only rules event input, first contact, real pot and invalid metadata/cache rejection\n";
 }

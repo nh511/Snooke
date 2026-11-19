@@ -39,25 +39,37 @@ bool MatchState::IsValid(std::string* Error) const
        (Phase==FramePhase::FinalColors && (RemainingReds!=0 || BallOn==EBallType::Red)) ||
        (Phase==FramePhase::Finished && (RemainingReds!=0 || ShotInProgress || MissPending || FreeBallAvailable || CueBallInHand)))
         return Fail(Error,"inconsistent frame phase state");
+    if((NominationPending && Phase!=FramePhase::ColorAfterRed) ||
+       (FreeBallNominated && (!FreeBallAvailable || FreeBallType==EBallType::Cue ||
+         std::string(BallTypeToString(FreeBallType))=="Unknown")) ||
+       (RespottedBlack && (RemainingReds!=0 || BallOn!=EBallType::Black || Phase!=FramePhase::FinalColors)) ||
+       (Phase==FramePhase::Finished && (NominationPending || FreeBallNominated || RespottedBlack)))
+        return Fail(Error,"inconsistent nomination/free-ball/black state");
     return true;
 }
 std::string MatchState::Serialize() const
 {
     std::ostringstream s;s.imbue(std::locale::classic());
-    s<<"snooker-match-v1 "<<FrameNumber<<' '<<FramePhaseName(Phase)<<' '<<CurrentPlayer<<' '
+    s<<"snooker-match-v2 "<<FrameNumber<<' '<<FramePhaseName(Phase)<<' '<<CurrentPlayer<<' '
      <<Scores[0]<<' '<<Scores[1]<<' '<<BallTypeToString(BallOn)<<' '<<RemainingReds<<' '
-     <<int(CueBallInHand)<<' '<<int(FreeBallAvailable)<<' '<<int(MissPending)<<' '<<int(ShotInProgress);
+     <<int(CueBallInHand)<<' '<<int(FreeBallAvailable)<<' '<<int(MissPending)<<' '<<int(ShotInProgress)<<' '
+     <<int(NominationPending)<<' '<<int(FreeBallNominated)<<' '<<BallTypeToString(FreeBallType)<<' '<<int(RespottedBlack);
     return s.str();
 }
 bool MatchState::Deserialize(const std::string& Text,MatchState& Output,std::string* Error)
 {
     std::istringstream s(Text);s.imbue(std::locale::classic());MatchState state;std::string magic,phase,on;
-    if(!(s>>magic) || magic!="snooker-match-v1" || !ReadUnsigned(s,state.FrameNumber) || !(s>>phase) ||
+    if(!(s>>magic) || (magic!="snooker-match-v1" && magic!="snooker-match-v2") || !ReadUnsigned(s,state.FrameNumber) || !(s>>phase) ||
        !ParsePhase(phase,state.Phase) || !ReadUnsigned(s,state.CurrentPlayer) ||
        !ReadUnsigned(s,state.Scores[0]) || !ReadUnsigned(s,state.Scores[1]) || !(s>>on) ||
        !TryParseBallType(on,state.BallOn) || !ReadUnsigned(s,state.RemainingReds) ||
        !ReadBool(s,state.CueBallInHand) || !ReadBool(s,state.FreeBallAvailable) ||
        !ReadBool(s,state.MissPending) || !ReadBool(s,state.ShotInProgress))return Fail(Error,"invalid match schema or fields");
+    if(magic=="snooker-match-v2") {
+        std::string free;
+        if(!ReadBool(s,state.NominationPending) || !ReadBool(s,state.FreeBallNominated) || !(s>>free) ||
+           !TryParseBallType(free,state.FreeBallType) || !ReadBool(s,state.RespottedBlack))return Fail(Error,"invalid match v2 fields");
+    }
     s>>std::ws;if(!s.eof())return Fail(Error,"unexpected match state tail");
     if(!state.IsValid(Error))return false;
     Output=state;return true;

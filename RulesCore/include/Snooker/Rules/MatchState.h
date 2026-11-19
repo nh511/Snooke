@@ -19,6 +19,10 @@ struct MatchState
     bool FreeBallAvailable=false;
     bool MissPending=false;
     bool ShotInProgress=false;
+    bool NominationPending=false;
+    bool FreeBallNominated=false;
+    EBallType FreeBallType=EBallType::Yellow;
+    bool RespottedBlack=false;
 
     bool IsValid(std::string* Error=nullptr) const;
     std::string Serialize() const;

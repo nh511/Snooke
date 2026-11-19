@@ -61,6 +61,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | VAL-008 | DONE | Entry/jaw/mouth-stop/recovery/capture fixtures assert pot/no-pot and exact midpoint restore; Debug/Release 67/67 |
 | REP-003 | DONE | Sparse solver checkpoints, exact step/time/event seek, first collision/pot and fault checkpoint tests passed Debug/Release 68/68 |
 | RUL-002 | DONE | Read-only typed shot physics input validates metadata/events/pot transitions and cached result; real pot and corruption tests passed Debug/Release 69/69 |
+| RUL-005 | DONE | Match-v2 nomination fields, normal red/color scoring, real physical pot integration, overflow and v1 migration passed Debug/Release 70/70 |
+| RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
 
 ## Execution Rules
 
@@ -386,3 +388,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ShotPhysicsResult/BuildShotRuleInput 显式接收 BallDefinition，核对 ID/球类型/半径/质量/材质；不从 ID 或 Actor 猜球类型。只读投影物理事件得到母球首次碰球、顺序落袋列表和母球落袋标记，检查事件游标、状态转移和最终静止。
 - 真实高杆碰撞记录、真实服务进红球验证；重复元数据、无母球、篡改 FirstContact/Potted 缓存、错误事件序号等拒绝，失败不修改输出。故障模拟不得计分。源码扫描无 Unreal 头文件。
 - Test-Current.ps1 -Run rul002-a0，Debug/Release 69/69，全部 exit 0。它只提供规则输入，不提前宣称犯规/计分/回合已完成。
+
+### RUL-005 验收（2026-11-19）
+
+- MatchState 升级为 v2，增加 NominationPending、FreeBallNominated、FreeBallType、RespottedBlack；v1 文本可读取并迁移。ColorAfterRed 必须先 NominateColor，红阶段正常红球得 1 分并转入待点名彩，末红后彩球按分值计分并生成复位列表。
+- EvaluateShot 只处理正常路径：要求物理事件输入已校验、首次接触等于 Ball On、母球未落袋、无犯规/FreeBall/最终彩球未实现状态；分数溢出、错误点名、错误阶段和状态输入事务性拒绝。
+- rules_scoring 既有显式事件测试，也用真实服务生成的碰球/落袋记录检查红球加分。首轮失败仅为连续彩球夹具在进入 FinalColors 后仍使用红后彩路径；修正为每个彩球独立的 ColorAfterRed 状态后，Test-Current.ps1 -Run rul005-a1 Debug/Release 70/70 全部通过。

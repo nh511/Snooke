@@ -33,5 +33,9 @@ int main()
     state=MatchState{};state.RemainingReds=16;CHECK(!state.IsValid());
     state=MatchState{};state.Phase=FramePhase::ColorAfterRed;state.BallOn=EBallType::Blue;state.RemainingReds=0;CHECK(state.IsValid());
     state.Phase=FramePhase::Finished;state.ShotInProgress=true;CHECK(!state.IsValid());
+    state=MatchState{};state.Phase=FramePhase::ColorAfterRed;state.BallOn=EBallType::Yellow;state.NominationPending=true;
+    MatchState loaded;CHECK(MatchState::Deserialize(state.Serialize(),loaded));CHECK(loaded.NominationPending);
+    const auto unchanged=loaded.Serialize();CHECK(!MatchState::Deserialize(state.Serialize()+" extra",loaded));CHECK(loaded.Serialize()==unchanged);
+    state.Phase=FramePhase::Reds;state.BallOn=EBallType::Red;CHECK(!state.IsValid());
     std::cout<<"PASS independent MatchState phases, file save/restore/print, flags, score bounds and transactional rejection\n";
 }
