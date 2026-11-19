@@ -79,7 +79,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | REL-006 | DONE | Server-authoritative shot/input/hash/resync/rollback/version-rejection design and automated content contract passed Debug/Release 85/85 |
 | AIC-001 | DONE | Immutable AI query for match/physics/definitions/cue/legal Ball On and stable state hash passed Debug/Release 86/86 |
 | AIC-002 | DONE | Ghost-ball legal target/pocket candidate, cut/risk fields and player-identical ShotInput conversion passed Debug/Release 87/87 |
-| AIC-003 | IN_PROGRESS | Evaluating candidates through shared service and exact physical replay/event parity |
+| AIC-003 | DONE | Candidate shared-service evaluation, shot-v2 record, scoring diagnostics, immutable query and exact replay passed Debug/Release 88/88 |
+| AIC-004 | IN_PROGRESS | Searching legal target/pocket/speed candidates and selecting a simple real scoring shot |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -516,3 +517,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - ShotCandidate 保存母球/目标球/袋口、单位出杆方向、Ghost Ball 球心、打点/偏移、速度、切角和风险。CreatePotCandidate 从目标到袋口反推接触球心，再从母球计算方向，只允许当前 Ball On。
 - ToShotInput 使用查询中的同一 CueProfile，设置相同 CueBallId/ProfileId/打点/速度并调用 ShotInput::ValidateFor；AI 不使用隐藏输入或直接改球。非法目标、袋口、负速度、退化方向事务性拒绝，查询哈希不变。
 - aic002-a0/a1 是直接头依赖遗漏（ShotInput、PhysicsBundle 别名）；补显式头后 Test-Current.ps1 -Run aic002-a2 Debug/Release 87/87 全部通过。
+
+### AIC-003 验收（2026-11-19）
+
+- EvaluateCandidate 将 ShotCandidate 转为玩家同构 ShotInput，通过 CreatePhysicsService/BeginShot/Step 实际计算到静止，生成完整 PhysicsShotRecord；统计合法/总落袋、母球落袋、风险和解释性得分。
+- 每次评估调用 ReplayShot，要求完整记录逐字节一致；参数版本不符、物理故障或未静止失败且不覆盖原输出。评估前后 IAIStateQuery 哈希不变。
+- Test-Current.ps1 -Run aic003-a0，Debug/Release 88/88，全部 exit 0。测试使用真实两球靠中袋局面，不读取保存轨迹驱动物理。
