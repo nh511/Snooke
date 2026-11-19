@@ -67,6 +67,9 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-008 | DONE | Foul reasons and max(4,relevant value) opponent award including no-contact/cue-pot/illegal-pot/free-ball rejection passed Debug/Release 73/73 |
 | RUL-009 | IN_PROGRESS | Adding same-shot multi-ball pot ordering and normal/foul/cue-pot combination classification |
 | RUL-008 | IN_PROGRESS | Adding foul reason/value calculation with minimum four and maximum relevant ball value |
+| RUL-008 | DONE | Foul reason/value calculation with minimum four and maximum relevant ball value passed Debug/Release 73/73 |
+| RUL-009 | DONE | Same-shot multi-red/color/cue-pot legal and foul classification with event order passed Debug/Release 74/74 |
+| RUL-010 | IN_PROGRESS | Adding continue-break versus foul/empty-pot turn switch classification |
 | RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
 | RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
 
@@ -418,3 +421,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - FoulValueResult/CalculateFoulValue 输出原因、罚分、对手玩家和相关最高球分值。罚分为 `max(4, relevant value)`，相关值来自错误首次接触、母球落袋或非法目标球进袋；合法正常杆返回无犯规/零字段。
 - 覆盖无首次接触最低 4、错碰黑球 7、母球进袋最低 4、对手归属、Free Ball 尚未实现时明确拒绝、非法事件缓存和状态校验。RUL-008 不修改 MatchState，不实现回合切换或 Miss。
 - rul008-a0/a1/a2 的失败均是测试夹具：母球定义重复、未接触事件游标未同步、事件时间越过终态；最终将夹具改为合法事件序列后 `rul008-final` Debug/Release 73/73 全部通过。
+
+### RUL-009 验收（2026-11-19）
+
+- MultiBallShotResult 保留物理 `PottedOrder`，按阶段和 Ball On 分类 `ScoringBalls`/`IllegalBalls`；多红在红阶段可正常计分，红夹彩、红后多彩、错碰和母球进袋均抑制正常计分并标记犯规原因。
+- 测试覆盖同杆多球的合法、混合非法、多个彩球、母球与目标球同时进袋、错误首次接触，且验证事件时序、终态袋口状态和无引擎依赖。RUL-009 不修改比分/回合，RUL-010 负责回合切换。
+- rul009-a0 编译夹具失败（CHECK 宏解析 vector initializer 逗号）；a1 修复宏夹具后发现母球事件时间早于目标球；rul009-final 修正为合法时序后 Debug/Release 74/74 全部通过。
