@@ -1,0 +1,7 @@
+#include <Snooker/Rules/Migration.h>
+#include <fstream>
+#include <iterator>
+#include <iostream>
+#define CHECK(x) do{if(!(x)){std::cerr<<"FAIL migration "<<__LINE__<<": "<<#x<<"; "<<error<<'\n';return 1;}}while(false)
+std::string Read(const char*p){std::ifstream f(p,std::ios::binary);return {std::istreambuf_iterator<char>(f),{}};}
+int main(int argc,char**argv){using namespace Snooker;std::string error;CHECK(argc==3);MigrationReport report;MatchState match;CHECK(MigrateMatchText("snooker-match-v1 1 Reds 0 0 0 Red 15 0 0 0 0",match,report,&error));CHECK(report.Status==MigrationStatus::Migrated&&match.Serialize().find("snooker-match-v2")==0);PhysicsSnapshot snapshot;CHECK(MigrateSnapshotText(Read(argv[1]),snapshot,report,&error));CHECK(report.Status==MigrationStatus::Migrated&&snapshot.SchemaVersion==3&&snapshot.EventCount==0);CHECK(!InspectShotText(Read(argv[2]),nullptr,report,&error));CHECK(report.Status==MigrationStatus::RecognizedIncompatible&&report.Message.find("lacks the complete PhysicsBundle")!=std::string::npos);CHECK(!MigrateMatchText("snooker-match-v99",match,report,&error));CHECK(report.Status==MigrationStatus::UnsupportedFuture);CHECK(!MigrateSnapshotText("99 BeforeShot x 0 0 0.004 0 0",snapshot,report,&error));CHECK(report.Status==MigrationStatus::UnsupportedFuture);CHECK(report.IsValid(&error));std::cout<<"PASS match-v1/snapshot-v2 migration and incompatible legacy/future reports\n";}

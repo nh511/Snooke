@@ -73,7 +73,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-015 | DONE | Unequal-score winner, tied respotted black, black decision and deterministic next-frame opening passed Debug/Release 79/79 |
 | RUL-013 | DONE | Ball-only two-edge snookered query, offer/nomination, Ball On value/respot and free-ball snooker restriction passed Debug/Release 80/80 |
 | RUL-014 | DONE | Match/practice Miss policy, both-edge clear path, snookers-needed suppression and current/restore choices passed Debug/Release 81/81 |
-| REP-005 | IN_PROGRESS | Adding explicit match-v1/snapshot-v2 migration and incompatible shot/future-version reports |
+| REP-005 | DONE | Explicit Match v1/Snapshot v2 migration, current frame/shot inspection and incompatible legacy/future reports passed Debug/Release 82/82 |
+| REL-004 | IN_PROGRESS | Packaging fault, checkpoint, parameters, input, log and reproduction command into a standalone directory |
 | RUL-015 | IN_PROGRESS | Adding unequal-score completion, tied respotted black and next-frame opening |
 
 ## Execution Rules
@@ -472,3 +473,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - snooker-rules-v1 新增 match/practice 参数文件（Miss 开关、最低罚分、D 线/半径），解析使用经典区域和资源边界。比赛模式只有犯规首次接触、击球前至少一个目标左右完整路径都清晰、且击球方无需斯诺克追分时 Miss；练习模式不判。
 - MissPending 结果支持 PlayFromCurrent（下一位从当前球位）或 RestoreAndReplay（恢复击球前快照，由犯规方重打），清除待处理旗标且不修改输入快照。未实现三次 Miss 判负，按计划排除。
 - Test-Current.ps1 -Run rul014-a0，Debug/Release 81/81，全部 exit 0。可视遮挡只计算球体，不计算库角；比分可用分值按红/彩阶段上限保守计算。
+
+### REP-005 验收（2026-11-19）
+
+- MigrationReport 提供 Current/Migrated/RecognizedIncompatible/UnsupportedFuture/Invalid。MatchState v1 迁移到 v2 默认新旗标；PhysicsSnapshot v2 迁移到 v3 默认全 OnCloth、EventCount=0。
+- legacy shot-v1 仅识别并明确报告“缺完整 PhysicsBundle，不能物理重放”，不伪造参数；shot-v2/frame-v1 可检查当前格式。未知未来 match/snapshot/shot/frame 版本明确拒绝。
+- snooker_migrate 提供命令行入口。Test-Current.ps1 -Run rep005-a0，Debug/Release 82/82，全部 exit 0。迁移失败不改变目标，Match/快照兼容样例来自实际旧格式文件。
