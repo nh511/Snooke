@@ -542,4 +542,5 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - DifficultyProfile 提供 Easy/Medium/Hard：固定种子方向误差、进攻落袋、终态母球安全距离和候选风险权重。每项 WeightedAIResult 输出 offense/safety/risk/error/total 明细；零误差 Hard 不构造零标准差分布。
 - 难度测试使用 3 袋×2 速度共 6 个真实 AIC-003 评估，Easy 与 Hard 必须选择不同索引，Hard 合法落袋数不低于 Easy；相同种子 Easy 重复选择和明细完全一致，Hard 记录经 REP-002 精确重放。
 - 初版 18 候选 Debug 太慢，缩为代表性 6 候选；完整 18 候选枚举仍由 AIC-004 验收。Hard 零标准差最初触发 Debug 断言等待，改为零误差不采样。Test-Current.ps1 -Run aic005-final Debug/Release 90/90 全部通过。
+- 用户反馈 `snooker_test_weighted_ai.exe` 的 Microsoft Visual C++ Debug Assertion：`normal_distribution` invalid sigma。根因是 Hard 的 `ErrorRadians=0` 仍构造了零标准差正态分布；现改为 `ErrorRadians>0` 才创建/采样分布，Hard 直接使用零误差。清理重建专项通过，aic005-popup-fix-final Debug/Release 90/90；截图中的旧 Debug 二进制需重新构建后才包含修复。
 - 目标完成数已达到 65/121；剩余 REVIEW=10、BLOCKED=2（UE）、TODO=44。后续 UE 未安装时仍可选择推进部分任务，但不在本轮 36 项承诺范围。

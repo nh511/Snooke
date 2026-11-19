@@ -40,14 +40,20 @@ bool WeightedAIResult::IsValid(std::string* error)const
 bool SelectWeightedShot(const std::vector<ShotEvaluation>& evaluations,const DifficultyProfile& profile,WeightedAIResult& output,std::string* errorText)
 {
     if(evaluations.empty()||!profile.IsValid(errorText))return Fail(errorText,"no evaluations or invalid profile");
-    std::mt19937 rng(profile.Seed);std::normal_distribution<double> error(0,profile.ErrorRadians>0?profile.ErrorRadians:1);
+    std::mt19937 rng(profile.Seed);
     bool found=false;WeightedAIResult best;
     for(std::size_t i=0;i<evaluations.size();++i) {
         const auto& evaluation=evaluations[i];if(!evaluation.IsValid(errorText))return false;
         WeightedAIResult result;result.Index=i;result.Evaluation=evaluation;
         result.Offense=10*evaluation.LegalPotted-20*evaluation.CueBallPotted-4*(evaluation.TotalPotted-evaluation.LegalPotted-(evaluation.CueBallPotted?1:0));
         result.Safety=Safety(evaluation);result.RiskPenalty=evaluation.Candidate.Risk;
-        result.ErrorPenalty=profile.ErrorRadians>0?std::abs(error(rng)):0;
+        result.ErrorPenalty=0;
+        if(profile.ErrorRadians>0) {
+            // Do not construct normal_distribution for Hard's exact-zero error
+            // profile; MSVC's Debug CRT asserts when sigma is zero.
+            std::normal_distribution<double> directionError(0,profile.ErrorRadians);
+            result.ErrorPenalty=std::abs(directionError(rng));
+        }
         result.Total=profile.PotWeight*result.Offense+profile.SafetyWeight*result.Safety-profile.RiskWeight*result.RiskPenalty-profile.ErrorWeight*result.ErrorPenalty;
         result.Detail="difficulty="+std::to_string(unsigned(profile.Difficulty))+" offense="+std::to_string(result.Offense)+" safety="+std::to_string(result.Safety)+" risk="+std::to_string(result.RiskPenalty)+" error="+std::to_string(result.ErrorPenalty)+" total="+std::to_string(result.Total);
         if(!found||result.Total>best.Total+1e-12||(NearlyEqual(result.Total,best.Total,1e-12)&&std::tie(evaluation.Candidate.TargetBall,evaluation.Candidate.Pocket,evaluation.Candidate.ForwardSpeedMetersPerSecond)<std::tie(best.Evaluation.Candidate.TargetBall,best.Evaluation.Candidate.Pocket,best.Evaluation.Candidate.ForwardSpeedMetersPerSecond))){best=std::move(result);found=true;}
