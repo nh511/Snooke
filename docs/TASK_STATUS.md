@@ -63,6 +63,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-002 | DONE | Read-only typed shot physics input validates metadata/events/pot transitions and cached result; real pot and corruption tests passed Debug/Release 69/69 |
 | RUL-005 | DONE | Match-v2 nomination fields, normal red/color scoring, real physical pot integration, overflow and v1 migration passed Debug/Release 70/70 |
 | RUL-006 | DONE | Cue-ball pot foul, ball-in-hand D placement, same-shot object-score suppression and invalid position/overlap rejection passed Debug/Release 71/71 |
+| RUL-007 | DONE | Explicit legal/wrong/no-contact first-contact judgement by Ball On and ball metadata passed Debug/Release 72/72 |
+| RUL-008 | IN_PROGRESS | Adding foul reason/value calculation with minimum four and maximum relevant ball value |
 | RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
 | RUL-006 | IN_PROGRESS | Adding cue-ball pot foul result, ball-in-hand and D-area placement validation |
 
@@ -402,3 +404,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - EvaluateCueBallPotted 从 ShotPhysicsResult 只读生成 Foul/CueBallInHand/SuppressObjectScoring 和同杆目标球列表，不计算 RUL-008 罚分，也不把母球当目标球得分。输入必须是真实一致的 Potted 事件/终态；缓存矛盾被拒绝。
 - PlaceCueBallInD 使用 TableDefinition 和显式 DLineX=-1.04、DCenterY=0、DRadius=0.292；检查半径高度、布面边界、D 区和与已占球的重叠。目标类型错误、越界和重叠均拒绝。
 - Test-Current.ps1 -Run rul006-a2，Debug/Release 71/71。a0/a1 的失败是测试夹具把母球 Potted 列表顺序/缓存标记写矛盾，修正为真实事件顺序后通过；实现没有放宽物理或规则校验。
+
+### RUL-007 验收（2026-11-19）
+
+- FirstContactResult/EvaluateFirstContact 只读取 ShotPhysicsResult 和 MatchState：首次 BallBall 事件涉及母球时取另一球，按显式 BallDefinition 与当前 BallOn 匹配；无首次接触为 NoContact，类型不匹配为 WrongBall，二者均标为犯规候选。
+- 测试覆盖红阶段合法/错误/未接触、ColorAfterRed 彩球、未知球引用、进行中和 Finished 状态拒绝，失败不改变已有结果。该任务不计算罚分、不切换回合。
+- Test-Current.ps1 -Run rul007-a1，Debug/Release 72/72。a0 仅为测试错误使用不存在的 ShotPhysicsResult::Serialize，修正为保存结果字段后通过。
