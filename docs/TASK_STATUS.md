@@ -72,6 +72,8 @@ Unlisted tasks are TODO. A partial implementation is not DONE.
 | RUL-009 | DONE | Same-shot multi-red/color/cue-pot legal and foul classification with event order passed Debug/Release 74/74 |
 | RUL-010 | DONE | Continue-break, legal miss, foul and cue-in-hand turn switching passed Debug/Release 75/75 |
 | RUL-011 | DONE | Own/highest-alternate/no-spot color respot and deterministic high-value multi-color ordering passed Debug/Release 76/76 |
+| RUL-012 | DONE | Yellow-through-black ordered removal, no-respot, wrong-sequence/miss result and final black completion passed Debug/Release 77/77 |
+| REP-004 | IN_PROGRESS | Adding versioned frame save with match/physics/definitions/shot history and process restart continuation |
 | RUL-012 | IN_PROGRESS | Adding ordered final-colors phase without respot and foul candidate on sequence error |
 | RUL-011 | IN_PROGRESS | Adding color respot priority and occupied-spot fallback result |
 | RUL-007 | IN_PROGRESS | Adding first-contact legal Ball On judgement and no-contact classification |
@@ -443,3 +445,9 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 - FindColorRespot 优先回本点；本点占用时按黑、粉、蓝、棕、绿、黄寻找最高分空点，返回 OwnSpot/AlternateSpot/NoSpotAvailable，不移动占位球。多彩球按高分到低分、同分 ID 顺序确定性处理并更新局部占位。
 - 测试覆盖本点、蓝球本点占用后回黑点、六点全占用、黑蓝同时复位、非法颜色/重复占位和事务性输出。替代点仅限现有显式球点；全占用返回可处理结果，不猜测沿纵向最近空位。
 - Test-Current.ps1 -Run rul011-a0，Debug/Release 76/76，全部 exit 0。实际放置到物理快照/规则替代点延伸由调用层处理。
+
+### RUL-012 验收（2026-11-19）
+
+- EvaluateFinalColor 仅用于 RemainingReds=0/FinalColors，按黄绿棕蓝粉黑推进。合法进球加对应分值、彩球永久移除且不复位；最后黑球后进入 Finished。错碰、未进、母球进袋和非法多球进袋返回明确非法结果供 RUL-008/010 组合。
+- 测试覆盖完整黄到黑 27 分顺序、每次 BallOn 推进、最终 Finished、错序和未进；分数溢出/非法阶段事务性拒绝。该任务不决定平分重摆黑，留给 RUL-015。
+- Test-Current.ps1 -Run rul012-a0，Debug/Release 77/77，全部 exit 0。
