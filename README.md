@@ -202,6 +202,8 @@ node tools/verify-shot-viewer.cjs build/service-cli-Debug-<run>
 - [`docs/PERFORMANCE_SAMPLING.md`](docs/PERFORMANCE_SAMPLING.md)：性能采样说明
 - [`docs/MEASUREMENT_RECORD_TEMPLATE.md`](docs/MEASUREMENT_RECORD_TEMPLATE.md)：人工测量记录模板
 - [`docs/NETWORK_SYNC_DESIGN.md`](docs/NETWORK_SYNC_DESIGN.md)：联机同步设计
+- [`docs/UE5_NEW_MACHINE_HANDOFF.md`](docs/UE5_NEW_MACHINE_HANDOFF.md)：新电脑 UE5 开发交接、逐文件索引和低 Token 阅读路径
+- [`docs/UE5_NEW_MACHINE_HANDOFF.md`](docs/UE5_NEW_MACHINE_HANDOFF.md)：新电脑 UE5 开发交接、逐文件索引和低 Token 阅读路径
 
 ## 当前限制
 
