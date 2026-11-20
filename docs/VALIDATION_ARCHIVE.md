@@ -1,5 +1,18 @@
 # Validation Archive
 
+## Current Status (2026-11-20)
+
+The current repository state supersedes older historical summaries below:
+
+- Remote `main`: `51d6fbd` (`README.md` is included).
+- Task status: `DONE 66/121`, `REVIEW 14`, `BLOCKED 2`, `TODO 39`.
+- Current standalone health run: Debug/Release `94/94`; clean source-copy Debug/Release `94/94`.
+- Standalone core has no Unreal header dependencies. UE5 editor, plugin, DataAsset, Automation, packaging, Insights and target-hardware acceptance remain pending.
+
+The dated sections below are retained as historical evidence and should not be
+used as the current task-status source of truth. Use `docs/TASK_STATUS.md` for
+the current task table.
+
 ## 2026-11-19 独立核心补充任务
 
 - `FND-008`、`VAL-001`、`VAL-002`、`REL-001` 的独立部分已推进到 REVIEW；`VAL-010` 已完成。
@@ -20,9 +33,9 @@ Chrome/CDP 结果：[shot-viewer-world-result.json](evidence/shot-viewer-world-r
 ## 当前结论
 
 - GitHub：`https://github.com/nh511/Snooke.git`
-- 远程 `main`：`64803ba`，包含 AIC-005 零标准差 `normal_distribution` Debug 断言修复。
+- 远程 `main` 已包含独立核心、五项无 UE5 任务和项目 README；具体提交以仓库 `git log` 为准。
 - UE 版本目标：Unreal Engine `5.8.4`；当前设备未安装 UE5，因此 UE 插件、编辑器、DataAsset、Actor、Blueprint、角色、UI、音效和打包验收仍未完成。
-- 任务统计：`DONE 65/121`、`REVIEW 10`、`BLOCKED 2`、未列出任务 `TODO 44`。
+- 本段为历史快照；当前任务统计以 `docs/TASK_STATUS.md` 为准（当前为 `DONE 66/121`、`REVIEW 14`、`BLOCKED 2`、`TODO 39`）。
 - BLOCKED：`FND-002`、`FND-003`，原因是缺少 UE5 编辑器/真实 UE 资源验收，不是独立 C++ 核心失败。
 
 ## 阶段验收

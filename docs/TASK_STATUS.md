@@ -564,3 +564,12 @@ The earlier Unity/C# branch of the documents is superseded; no C# migration is b
 验证：`Test-Current.ps1 -Run core-five-final3` 的 configure、Debug build/test、Release build/test 均 exit 0，Debug/Release 各 94/94；`physics_lab_scenarios` 会真实运行四个预设并分别校验 BallSettled、BallBall、Cushion、MouthEntered/PocketContact/Potted 事件。性能测试使用真实两球碰撞，要求 `ball_ball_time_ns` 和 BallBall 次数非零。真实 `snooker_simulate --debug=...` 生成 `debug.json` 通过。Chrome/CDP 使用真实 22 球数据验证 Top/World 切换、速度/角速度/法线/睡眠叠加、事件跳转、步进、播放和桌面/手机布局，1172 种采样颜色且无 JavaScript 异常。
 
 按唯一任务状态重新统计：DONE 66/121、REVIEW 14、BLOCKED 2、TODO 39。`FND-002`、`FND-003` 仍因 UE5 环境保持 BLOCKED。
+
+### 独立核心健康检查（2026-11-20）
+
+- 当前工作区与 `origin/main` 同步且干净；任务书 121 项与状态表 82 项已标记任务一一对应，未标记的 39 项全部属于 UE5/目标硬件依赖范围。
+- `Test-Current.ps1 -Run health-final-20261120`：配置、Debug 构建/测试、Release 构建/测试全部 exit 0；Debug/Release 各 94/94。
+- `Verify-Standalone.ps1 -Run health-clean-20261120`：干净源副本 Debug/Release 各 94/94，确认构建不依赖本地既有二进制。
+- 独立核心目录无 Unreal 头文件依赖；Node/JavaScript 语法检查 15/15 通过；Chrome/CDP 多球查看器验证通过。
+- 严格 MSVC `/W4` 核心库构建通过且无告警；补充启用 `/EHsc`，修复快照恢复参数遮蔽和 frame end 有符号/无符号比较告警。
+- 故障通道约定：`Fault` 不作为 `PhysicsEventKind` 事件追加；物理故障通过 `PhysicsRunState::Faulted`、`PhysicsFault`、`GetFault()` 和故障包独立传递。

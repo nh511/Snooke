@@ -218,7 +218,7 @@ PhysicsSnapshot PhysicsSnapshot::Capture(const PhysicsClock& Clock, const std::v
     Result.PocketStates.resize(Balls.size());
     return Result;
 }
-bool PhysicsSnapshot::Restore(PhysicsClock& Clock, std::vector<BallState>& Balls,
+bool PhysicsSnapshot::Restore(PhysicsClock& Clock, std::vector<BallState>& OutputBalls,
                               const std::string& ExpectedParameterVersion, std::string* Error) const
 {
     if (!IsValid(Error)) return false;
@@ -235,7 +235,7 @@ bool PhysicsSnapshot::Restore(PhysicsClock& Clock, std::vector<BallState>& Balls
     PhysicsClock Candidate;
     if (!Candidate.Restore({FixedStepSeconds,AccumulatorSeconds,StepIndex})) return false;
     auto CopiedBalls=this->Balls;
-    Balls.swap(CopiedBalls);
+    OutputBalls.swap(CopiedBalls);
     Clock=Candidate;
     return true;
 }

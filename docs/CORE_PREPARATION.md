@@ -11,10 +11,10 @@ Authority: DEVELOPMENT_PLAN.md and EXECUTABLE_TASKS.md. Task-by-task acceptance 
 - Portable categorized logging with severity filters, shot correlation and synchronous stream/file sinks.
 - Versioned core config v2 plus independent cushion/pocket/cue profiles and table-description fixtures; engineering examples only, not measured calibration. Cue speed/offset/restitution fields persist in config and embedded records; old config v1 is explicitly rejected.
 - snooker_validation: shared config loading and empty-state/math checks. snooker_single_ball loads configuration and a moving snapshot, runs flat-cloth sliding/rolling/spin/sleep steps, exports CSV and saves the final snapshot.
-- PhysicsClock, snapshot v2 clock restoration and ShotRecord transport schema/file persistence; full collision replay remains pending.
+- PhysicsClock, snapshot v3 clock restoration/migration, full `snooker-shot-v2` records, deterministic physical replay and `ReplayController` checkpoints.
 - Stationary-ball cue impulse with profile limits, file/record CLI entry and byte-identical settled trajectory parity.
 - Swept ball-pair candidates, continuous sphere TOI, pair collision response with spin, rich ordered collision log and touching query. These are standalone functions, not a global multi-ball service.
-- Local CSV trajectory canvas, timeline and strict parser; Chrome desktop/mobile interaction verification uses real generated data.
+- Fixed-step multi-ball JSON/CSV export and Chrome desktop/mobile 2D shot inspection with geometry, trajectories, contacts, events, world projection, vectors, normals and sleeping overlays.
 - Parameter-driven finite table geometry, explicit pocket-mouth/jaw/floor descriptions and SVG export from real generated primitives.
 - Finite current-position rail contacts and local cushion impulse response, with side-spin and saved one/two-rail response reconstruction.
 - Deterministic 22-ball opening/training/custom placement, occupied color reset errors, persisted MatchState, frame opening and read-only BallOn query.
@@ -34,6 +34,6 @@ For independent source-copy verification use tools/Verify-Standalone.ps1 with -C
 
 ## Not Implemented / Not Verified
 
-No chronological full-table multi-ball physics service, continuous cushion/pocket collision solver, pocket state machine, complete shot replay, full scoring/foul rules or playable game. Local pair/cushion responses, opening/state data and cue impulse functions are not a complete match simulator. The single-ball runner is limited to flat cloth with an explicit boundary-failure guard. Existing ShotRecord persistence is not simulated replay; the CSV viewer has no collision/pocket event display. No UE editor launch, generated assets, DataAsset import, plugin core integration or UE Automation/Development/DebugGame build. These tests do not complete M0/M1 or MVP.
+The standalone core is not yet a complete playable UE5 game. UE editor launch, generated assets, DataAsset import, plugin compilation/integration, UE Automation, Development/DebugGame builds, character interaction, animation, UMG, audio, packaging, Unreal Insights and target-hardware acceptance remain unverified. Engineering parameters and regression baselines are not empirical table calibration. The legacy `ShotRecord v1` transport remains distinct from the current `snooker-shot-v2` physical record/replay path.
 
 Task status distinguishes independent verification from outstanding UE acceptance; partial mixed tasks remain REVIEW or BLOCKED. No task count is inferred from the number of passing tests.

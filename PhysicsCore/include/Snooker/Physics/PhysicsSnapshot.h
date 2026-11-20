@@ -41,7 +41,7 @@ struct PhysicsSnapshot
     static bool Deserialize(const std::string& Serialized, PhysicsSnapshot& OutSnapshot, std::string* OutError = nullptr);
     static PhysicsSnapshot Capture(const PhysicsClock& Clock, const std::vector<BallState>& Balls,
                                    const std::string& ParameterVersion, ESnapshotPhase Phase);
-    bool Restore(PhysicsClock& Clock, std::vector<BallState>& Balls,
+    bool Restore(PhysicsClock& Clock, std::vector<BallState>& OutputBalls,
                  const std::string& ExpectedParameterVersion, std::string* Error=nullptr) const;
 };
 using FPhysicsSnapshot = PhysicsSnapshot;

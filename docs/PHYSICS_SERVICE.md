@@ -27,6 +27,10 @@ Missing/disconnected rails are errors, not filled by unbounded synthetic walls.
 Physics bundle v2 persists this option; v1 remains readable but is not accepted
 for full-table simulation unless explicitly upgraded and geometrically validated.
 
+Faults are not appended as `PhysicsEventKind` values. A failed step latches
+`PhysicsRunState::Faulted` and exposes the structured `PhysicsFault` through
+`GetFault()`; the fault package and `fault.txt` preserve the replay checkpoint.
+
 ## State and Failure
 
 Step takes elapsed frame seconds, retains bounded accumulator debt, and processes
@@ -44,9 +48,11 @@ Same loaded parameter bytes/version and solver build are required for replay.
 ## CLI and Tests
 
 `snooker_simulate bundle snapshot shot-input output-directory` uses only the public
-service. It writes binary/LF `final.snapshot` and `events.txt`, or `fault.txt`.
-It refuses to overwrite prior successful result files. This is not yet the full
-ShotRecord/JSON/CSV export, which belongs to REP-001/VAL-003.
+service. It writes `record.shot`, `result.json`, `viewer.json`, `trajectory.csv`,
+`events.txt`, `final.snapshot` and `debug.json` for settled runs, or `fault.txt`
+for faulted runs. It refuses to overwrite prior successful result files. The
+record is the current `snooker-shot-v2` format and is independently replayed by
+`snooker_replay`.
 
 Tests cover FPS/event equality, irregular frame times, high-speed chain impacts
 within one step, two rails with spin, once-only pocket capture, canonical snapshot

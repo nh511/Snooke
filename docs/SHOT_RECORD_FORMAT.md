@@ -8,14 +8,14 @@ Settled/fault result. snooker_simulate writes record.shot in binary/LF with full
 double precision. Fault results may embed a PhysicsFault record. Version/reference,
 cursor, ball-property, event-order and settled-state checks are transactional.
 The v1 type below remains the legacy single-ball transport, not full physics replay.
-Parsing/round-trip proves transport integrity, not recomputed dynamics; REP-002
-must independently rerun and compare all events and final state.
+Parsing/round-trip proves transport integrity; REP-002 independently reruns the
+record through the shared physics service and compares all events and final state.
 
 Standalone UTF-8 text schema: snooker-shot-v1 build-version, config quoted-CoreConfig, initial quoted-PhysicsSnapshot-v2, input quoted-ShotInput, events count followed by event records, final quoted-PhysicsSnapshot-v2, result token, end. Quoting uses C++ std::quoted: embedded quotes/backslashes are escaped; embedded line breaks are real line breaks. Classic locale and full double precision are required.
 
-Event: completed step, time (s), kind token, ball ID, optional other ball ID (0 for none), contact point XYZ (m), normal XYZ. This is a transport record, not a completed collision event solver. Event order, finite fields, ball references and record time bounds are validated. PHY-014 now provides a separate rich CollisionLog with pre/post velocities and energy diagnostics. Integrating that log and ball/cushion/pocket material bytes into complete ShotRecord replay requires explicit schema extension before full replay acceptance.
+Event: completed step, time (s), kind token, ball ID, optional other ball ID (0 for none), contact point XYZ (m), normal XYZ and impulse. Event order, finite fields, ball references and record time bounds are validated. `CollisionLog` remains a lower-level diagnostic format; `PhysicsShotRecord` is the current complete service-level record used by the replay tool.
 
-The full CoreConfig v2 is embedded, including parameter version, fixed step and iteration count; both snapshots must reference that version/step. Build version is mandatory. Initial/final phases, ID sets, cue profile and pullback limits are checked. Ball states cannot be dropped from the record; future pocket state needs a versioned schema extension. Input time remains input-clock metadata, not simulation time.
+The full PhysicsBundle v2 is embedded, including parameter version, fixed step, geometry, profiles and safety limits; both snapshots must reference that version/step. Build version is mandatory. Initial/final phases, ID sets, cue profile and pullback limits are checked. Ball states and pocket states cannot be dropped from the record. Input time remains input-clock metadata, not simulation time.
 
 The schema fixture in data/example.shot is NOT a simulated or calibrated shot: zero elapsed time, no events, result schema-fixture. Tests create a real uniform-motion clock/state record, persist/reload it and compare every serialized field. Neither the fixture nor round-trip tests claim collision replay, valid strike dynamics, a settled result or a complete snooker shot. The separate center-entry fixture is input transport with a placeholder result, not a saved simulated final state; the CLI parity test ignores its final block and independently computes real cloth settling. Those remain physics/replay task acceptance.
 

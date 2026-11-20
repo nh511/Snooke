@@ -7,7 +7,7 @@ namespace {bool Fail(std::string* e,const char* m){if(e)*e=m;return false;}}
 bool FrameEndResult::IsValid(std::string* Error) const
 {
     if(!State.IsValid(Error)||Winner>1||FrameEnded==NeedsRespottedBlack)return Fail(Error,"invalid frame-end result flags");
-    if(FrameEnded&&(State.Phase!=FramePhase::Finished||State.Scores[0]==State.Scores[1]||Winner!=(State.Scores[1]>State.Scores[0])))return Fail(Error,"invalid finished frame result");
+    if(FrameEnded&&(State.Phase!=FramePhase::Finished||State.Scores[0]==State.Scores[1]||Winner!=static_cast<std::uint32_t>(State.Scores[1]>State.Scores[0])))return Fail(Error,"invalid finished frame result");
     if(NeedsRespottedBlack&&(State.Phase!=FramePhase::FinalColors||!State.RespottedBlack||State.BallOn!=EBallType::Black||State.Scores[0]!=State.Scores[1]))return Fail(Error,"invalid respotted black result");
     return true;
 }
